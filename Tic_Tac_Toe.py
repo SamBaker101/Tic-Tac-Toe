@@ -130,7 +130,6 @@ def main():
     board = setBoard()
     while(running):
         mode = chooseMode()
-        print("choice : ", mode)
         turn_count = 0
         player = random.randint(1,2)
         drawBoard(board)
