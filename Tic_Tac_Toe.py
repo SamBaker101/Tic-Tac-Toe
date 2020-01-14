@@ -12,7 +12,9 @@ def chooseMode():
         print("Please choose a mode:")
         print("1 - Player Vs Player")
         print("2 - Player Vs RandomAI")
+        print("3 - Player Vs ListAI")
         choice = int(input())
+        
     return choice
 
 def setBoard():
@@ -86,7 +88,7 @@ def takeTurn(player, board):
     drawBoard(new_board)
     return new_board
 
-def takeTurnAI(board):
+def takeTurnRandomAI(board):
     sleep(0.5)
     possible_moves = []
     for i in range(3):
@@ -102,6 +104,22 @@ def takeTurnAI(board):
     drawBoard(board)
     return board  
 
+def takeTurnListAI(board):
+    move_list = [(1, 1), (0, 0), (2, 2), 
+                 (2, 0), (0, 2), (0, 1), 
+                 (2, 1), (1, 0), (1, 2)]
+    for (x, y) in move_list:
+        if checkBoard(x, y, board):
+            board = markBoard(x, y, 2, board)
+
+            print("")
+            print("Player 2: ")
+            print("")
+
+            drawBoard(board)
+            return board  
+    
+
 ##################Game Loop###########################
 
 def main():
@@ -112,11 +130,15 @@ def main():
     board = setBoard()
     while(running):
         mode = chooseMode()
+        print("choice : ", mode)
         turn_count = 0
+        player = random.randint(1,2)
         drawBoard(board)
         while(not(won)):
             if mode == 2 and player == 2:
-                board = takeTurnAI(board)
+                board = takeTurnRandomAI(board)
+            elif mode == 3 and player == 2:
+                board = takeTurnListAI(board)
             else:
                 board = takeTurn(player, board)
             
