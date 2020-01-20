@@ -8,11 +8,12 @@ from time import *
 
 def chooseMode():
     choice = 0
-    while choice < 1 or choice > 3:
+    while choice < 1 or choice > 5:
         print("Please choose a mode:")
         print("1 - Player Vs Player")
         print("2 - Player Vs RandomAI")
         print("3 - Player Vs ListAI")
+        print("4 - Player Vs LineAI")
         choice = int(input())
         
     return choice
@@ -91,8 +92,8 @@ def takeTurn(player, board):
 def takeTurnRandomAI(board):
     sleep(0.5)
     possible_moves = []
-    for i in range(3):
-       for j in range(3):
+    for i in range(0,3):
+       for j in range(0,3):
            if checkBoard(i, j, board) == True:
                possible_moves.append((i, j))
     movex, movey = random.choice(possible_moves)
@@ -119,9 +120,43 @@ def takeTurnListAI(board):
             drawBoard(board)
             return board  
     
+def takeTurnLineAI(board):
+    x, y = -1, -1
+    possible_moves = []
+    for i in range(0,3):
+        for j in range(0,3):
+            print(i, " ", j, " ", board[i][j])
+            if (board[i][j] != 0):
+                print("checking")
+                if (board[i][j] == board[(i+1)%3][j]) and 0 == board[(i+2)%3][j]:
+                    x, y =  j, (i+2)%3
+                elif (board[i][j] == board[i][(j+1)%3]) and 0 == board[i][(j+1)%3]:
+                    x, y = (j+2)%3, i
+                elif i == j:
+                    if (board[i][j] == board[(i+1)%3][(j+1)%3]) and 0 == board[(i+2)%3][(j+2)%3]:
+                        x, y = (j+2)%3, (i+2)%3
+                elif i+j == 2:
+                   if (board[i][j] == board[(i-1)%3][(j+1)%3]) and 0 == board[(i-2)%3][(j+2)%3]:
+                        x, y = (j+2)%3, (i-2)%3
+            
+    if x == -1 or y == -1:
+        for k in range(0,3):
+            for m in range(0,3):
+                if checkBoard(m, k, board) == True:
+                    possible_moves.append((m, k))
+        x, y = random.choice(possible_moves)
+
+    board = markBoard(x, y, 2, board)
+
+    print("")
+    print("Player 2: ")
+    print("")
+
+    drawBoard(board)
+    return board
+
 
 ##################Game Loop###########################
-
 def main():
     mode = 2
     running = True
@@ -138,6 +173,8 @@ def main():
                 board = takeTurnRandomAI(board)
             elif mode == 3 and player == 2:
                 board = takeTurnListAI(board)
+            elif mode == 4 and player == 2:
+                board = takeTurnLineAI(board)
             else:
                 board = takeTurn(player, board)
             

@@ -8,3 +8,4 @@ Sam Baker - 01/12/2020
   - 1 - Player Vs Player - Standard Player Vs Player Tic-Tac-Toe
   - 2 - Player Vs RandomAI - Computer will check possible moves and choose 1 at random
   - 3 - Player Vs ListAI - Computer has a list of possible moves, it will make the first available move from this list
+  - 4 - Player Vs LineAI - Computer will search for lines which can be completed during it's turn and complete them. This algorithm will both complete the computers lines to win the game and your lines to block you. If no possible lines are present the computer moves at random.
