@@ -128,7 +128,7 @@ def takeTurnLineAI(board):
             if (board[i][j] != 0):
                 if (board[i][j] == board[(i+1)%3][j]) and 0 == board[(i+2)%3][j]:
                     x, y =  j, (i+2)%3
-                elif (board[i][j] == board[i][(j+1)%3]) and 0 == board[i][(j+1)%3]:
+                elif (board[i][j] == board[i][(j+1)%3]) and 0 == board[i][(j+2)%3]:
                     x, y = (j+2)%3, i
                 elif i == j:
                     if (board[i][j] == board[(i+1)%3][(j+1)%3]) and 0 == board[(i+2)%3][(j+2)%3]:
