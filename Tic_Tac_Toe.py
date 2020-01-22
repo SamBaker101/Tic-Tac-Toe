@@ -51,6 +51,14 @@ def markBoard(x, y, mark, board):
         board[y][x] = mark
     return board
 
+def possibleMoves(board):
+    moves = []
+    for i in range(3):
+        for j in range(3):
+            if board[i][j] == 0:
+                moves.append((j, i))
+    return moves
+
 def takeInput():
     x, y = 0, 0
     print("please choose a square")
@@ -106,11 +114,7 @@ def takeTurnAI(board, mode):
 
 def takeTurnRandomAI(board):
     sleep(0.5)
-    possible_moves = []
-    for i in range(0,3):
-       for j in range(0,3):
-           if checkBoard(j, i, board) == True:
-               possible_moves.append((i, j))
+    possible_moves = possibleMoves(board)
     x, y = random.choice(possible_moves)
     return x, y
     
@@ -126,7 +130,7 @@ def takeTurnListAI(board):
     
 def takeTurnLineAI(board):
     x, y = -1, -1
-    possible_moves = []
+    possible_moves = possibleMoves(board)
     for i in range(0,3):
         for j in range(0,3):
             if (board[i][j] != 0):
@@ -142,10 +146,6 @@ def takeTurnLineAI(board):
                         x, y = (j+2)%3, (i-2)%3
             
     if x == -1 or y == -1:
-        for k in range(0,3):
-            for m in range(0,3):
-                if checkBoard(m, k, board) == True:
-                    possible_moves.append((m, k))
         x, y = random.choice(possible_moves)
 
     return x, y
@@ -164,7 +164,7 @@ def main():
         player = random.randint(1,2)
         drawBoard(board)
         while(not(won)):
-            if player == 2 and mode != 2:
+            if player == 2 and mode != 1:
                 board = takeTurnAI(board, mode)
             else:
                 board = takeTurn(player, board)
