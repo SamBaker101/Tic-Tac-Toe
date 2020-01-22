@@ -4,16 +4,29 @@
 import random
 from time import *
 
-######################################################
+#######################################################
+#                     Constants                       #
+#######################################################
+
+WIN_INC = 1.05
+DRAW_INC = 1.01
+LOSS_INC = 0.95
+
+#######################################################
+#                       General                       #
+#######################################################
 
 def chooseMode():
     choice = 0
-    while choice < 1 or choice > 5:
+    while choice < 1 or choice > 7:
         print("Please choose a mode:")
         print("1 - Player Vs Player")
         print("2 - Player Vs RandomAI")
         print("3 - Player Vs ListAI")
         print("4 - Player Vs LineAI")
+        print("5 - Player Vs Blind1")
+        print("6 - Player Vs Blind2")
+        print("7 - Blind Training")
         choice = int(input())
         
     return choice
@@ -40,6 +53,32 @@ def drawBoard(board):
                 print('something went wrong', i,',', j)
         print("")
 
+def takeInput():
+    x, y = 0, 0
+    print("please choose a square")
+    print("X:")
+    x = int(input())
+    print("Y:")
+    y = int(input())
+    return (x, y)
+
+#######################################################
+#                Turn / Board Checks                  #
+#######################################################
+
+def takeTurn(player, board):
+    
+    print("")
+    print("Player", player, ": ")
+    print("")
+    x, y = takeInput()
+    new_board = markBoard(x, y, player, board)
+    while(new_board == 0):
+        x, y = takeInput()
+        new_board = markBoard(x, y, player, board)
+    drawBoard(new_board)
+    return new_board
+
 def checkBoard(x, y, board):
     if board[y][x] == 0:
         return True
@@ -61,15 +100,6 @@ def possibleMoves(board):
                 moves.append((j, i))
     return moves
 
-def takeInput():
-    x, y = 0, 0
-    print("please choose a square")
-    print("X:")
-    x = int(input())
-    print("Y:")
-    y = int(input())
-    return (x, y)
-
 def checkWin(board):
     for i in range(3):
         if board[i][0] != 0:
@@ -86,25 +116,118 @@ def checkWin(board):
    
     return False
 
-def takeTurn(player, board):
+#######################################################
+#                     Learning                        #
+#######################################################
+
+class BlindAI:
+    def __init__(self, name):
+        self.AI_name = name
+        self.moves_taken = []
+        self.win_count = 0
+        self.loss_count = 0
+        self.draw_count = 0
+        self.move_array = self.buildMoveArray()
+
+    def buildMoveArray(self):
+        move_array = {}
+        for i in range(3):
+            for j in range(3):
+                move_array[(i, j)] = random.uniform(0.4, 0.6)
+        return move_array
+
+    def chooseMove(self, board):
+        (x, y), w = (-1, -1), 0
+        possible_moves = possibleMoves(board)
+        for move in possible_moves:
+            if self.move_array[move] > w:
+                (x, y) = move
+        self.moves_taken.append((x,y))
+        return x,y
+
+    def train(self, opponent):
+        print('How many rounds of training')
+        n = int(input())
+        while (n >= 0):
+            n = n - 1
+            board = setBoard()
+            game = 1
+            player = random.randint(1,2)
+            while(game):
+                player = player + 1
+                
+                if (possibleMoves(board) == []):
+                    game = 0
+                    self.updateWeightsDraw()
+                    self.draw_count = self.draw_count + 1
+                    opponent.updateWeightsDraw()
+                    opponent.draw_count = opponent.draw_count + 1
+                    break
+
+                if player > 2:
+                    player = 1
+                
+                if player == 1:
+                    x, y = self.chooseMove(board)
+                    board = markBoard(x, y, player, board)
+                    if checkWin(board):
+                        self.updateWeightsWin()
+                        self.win_count = self.win_count + 1
+                        opponent.updateWeightsLoss()
+                        opponent.loss_count = opponent.loss_count + 1
+                        game = 0
+                        break
     
-    print("")
-    print("Player", player, ": ")
-    print("")
-    x, y = takeInput()
-    new_board = markBoard(x, y, player, board)
-    while(new_board == 0):
-        x, y = takeInput()
-        new_board = markBoard(x, y, player, board)
-    drawBoard(new_board)
-    return new_board
+                if player == 2:
+                    x, y = opponent.chooseMove(board)
+                    board = markBoard(x, y, player, board)
+                    if checkWin(board):
+                        opponent.updateWeightsWin()
+                        opponent.win_count = opponent.win_count + 1
+                        self.updateWeightsLoss()
+                        self.loss_count = self.loss_count + 1
+                        game = 0
+                        break
+
+            print('Games Remaining : ', n)
+        print('Computer 1 : Wins:', self.win_count, ' Losses: ', self.loss_count, ' Draws : ', self.draw_count)
+        self.printWeights()
+
+        print('Computer 2 : Wins:', opponent.win_count, ' Losses: ', opponent.loss_count, ' Draws : ', opponent.draw_count)
+        opponent.printWeights()
+
+    def printWeights(self):
+        for i in range(3):
+            for j in range(3):
+                print('X, Y: ', i, j, ' Weight:', self.move_array[(i,j)])
+
+    def updateWeightsDraw(self):
+        for move in self.moves_taken:
+            self.move_array[move] = self.move_array[move] * DRAW_INC
+        self.moves_taken = []
+
+    def updateWeightsWin(self):
+        for move in self.moves_taken:
+            self.move_array[move] = self.move_array[move] * WIN_INC
+        self.moves_taken = []
+
+    def updateWeightsLoss(self):
+        for move in self.moves_taken:
+            self.move_array[move] = self.move_array[move] * LOSS_INC
+        self.moves_taken = []
+
+#######################################################
+#                   Logical   AI                      #
+#######################################################
 
 def takeTurnAI(board, mode):
     x, y = -1, -1
     switcher = {
         2: takeTurnRandomAI(board),
         3: takeTurnListAI(board),
-        4: takeTurnLineAI(board)}
+        4: takeTurnLineAI(board),
+        5: Blind1.chooseMove(board),
+        6: Blind2.chooseMove(board)}
     x, y = switcher.get(mode, "Invalid Mode Selection")
     if (x >= 0 and x < 3) and y >= 0 and y < 3:
         board = markBoard(x, y, 2, board)
@@ -125,7 +248,6 @@ def takeTurnRandomAI(board):
     x, y = random.choice(possible_moves)
     return x, y
     
-
 def takeTurnListAI(board):
     move_list = [(1, 1), (0, 0), (2, 2), 
                  (2, 0), (0, 2), (0, 1), 
@@ -134,7 +256,6 @@ def takeTurnListAI(board):
         if checkBoard(x, y, board):
             return x, y
 
-    
 def takeTurnLineAI(board):
     x, y = -1, -1
     possible_moves = possibleMoves(board)
@@ -162,8 +283,13 @@ def takeTurnLineAI(board):
 
     return x, y
 
+#######################################################
+#                        Main                         #
+#######################################################
 
-##################Game Loop###########################
+Blind1 = BlindAI('Blind1')
+Blind2 = BlindAI('Blind2')
+
 def main():
     mode = 2
     running = True
@@ -172,6 +298,11 @@ def main():
     board = setBoard()
     while(running):
         mode = chooseMode()
+
+        if mode == 7:
+            Blind1.train(Blind2)
+            won = True
+
         turn_count = 0
         player = random.randint(1,2)
         drawBoard(board)
@@ -208,6 +339,6 @@ def main():
         else:
             running = False
 
-######################################################
+#######################################################
 
 main()
