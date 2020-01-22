@@ -89,15 +89,14 @@ def takeTurn(player, board):
     drawBoard(new_board)
     return new_board
 
-def takeTurnRandomAI(board):
-    sleep(0.5)
-    possible_moves = []
-    for i in range(0,3):
-       for j in range(0,3):
-           if checkBoard(i, j, board) == True:
-               possible_moves.append((i, j))
-    movex, movey = random.choice(possible_moves)
-    board = markBoard(movex, movey, 2, board)
+def takeTurnAI(board, mode):
+    x, y = -1, -1
+    switcher = {
+        2: takeTurnRandomAI(board),
+        3: takeTurnListAI(board),
+        4: takeTurnLineAI(board)}
+    x, y = switcher.get(mode, "Invalid Mode Selection")
+    board = markBoard(x, y, 2, board)
     print("")
     print("Player 2: ")
     print("")
@@ -105,20 +104,25 @@ def takeTurnRandomAI(board):
     drawBoard(board)
     return board  
 
+def takeTurnRandomAI(board):
+    sleep(0.5)
+    possible_moves = []
+    for i in range(0,3):
+       for j in range(0,3):
+           if checkBoard(j, i, board) == True:
+               possible_moves.append((i, j))
+    x, y = random.choice(possible_moves)
+    return x, y
+    
+
 def takeTurnListAI(board):
     move_list = [(1, 1), (0, 0), (2, 2), 
                  (2, 0), (0, 2), (0, 1), 
                  (2, 1), (1, 0), (1, 2)]
     for (x, y) in move_list:
         if checkBoard(x, y, board):
-            board = markBoard(x, y, 2, board)
+            return x, y
 
-            print("")
-            print("Player 2: ")
-            print("")
-
-            drawBoard(board)
-            return board  
     
 def takeTurnLineAI(board):
     x, y = -1, -1
@@ -144,14 +148,7 @@ def takeTurnLineAI(board):
                     possible_moves.append((m, k))
         x, y = random.choice(possible_moves)
 
-    board = markBoard(x, y, 2, board)
-
-    print("")
-    print("Player 2: ")
-    print("")
-
-    drawBoard(board)
-    return board
+    return x, y
 
 
 ##################Game Loop###########################
@@ -167,12 +164,8 @@ def main():
         player = random.randint(1,2)
         drawBoard(board)
         while(not(won)):
-            if mode == 2 and player == 2:
-                board = takeTurnRandomAI(board)
-            elif mode == 3 and player == 2:
-                board = takeTurnListAI(board)
-            elif mode == 4 and player == 2:
-                board = takeTurnLineAI(board)
+            if player == 2 and mode != 2:
+                board = takeTurnAI(board, mode)
             else:
                 board = takeTurn(player, board)
             
