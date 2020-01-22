@@ -2,7 +2,7 @@
 
 Sam Baker - 01/12/2020
 
- A simple command line based Tic Tac Toe game created as a simple testing ground for AI algorithms.
+ A simple command line based Tic Tac Toe game created as a testing ground for logical and machine learning algorithms.
 
  # Game Modes
   - 1 - Player Vs Player - Standard Player Vs Player Tic-Tac-Toe
