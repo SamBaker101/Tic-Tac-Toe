@@ -36,6 +36,8 @@ def drawBoard(board):
                 print(" O ", end = " ")
             elif board[i][j] == 2:
                 print(" X ", end = " ")
+            else:
+                print('something went wrong', i,',', j)
         print("")
 
 def checkBoard(x, y, board):
@@ -104,7 +106,12 @@ def takeTurnAI(board, mode):
         3: takeTurnListAI(board),
         4: takeTurnLineAI(board)}
     x, y = switcher.get(mode, "Invalid Mode Selection")
-    board = markBoard(x, y, 2, board)
+    if (x >= 0 and x < 3) and y >= 0 and y < 3:
+        board = markBoard(x, y, 2, board)
+    else:
+        print('Something has gone terribly wrong')
+        print('X returned: ', x)
+        print('Y returned: ', y)
     print("")
     print("Player 2: ")
     print("")
@@ -131,20 +138,25 @@ def takeTurnListAI(board):
 def takeTurnLineAI(board):
     x, y = -1, -1
     possible_moves = possibleMoves(board)
-    for i in range(0,3):
-        for j in range(0,3):
-            if (board[i][j] != 0):
-                if (board[i][j] == board[(i+1)%3][j]) and 0 == board[(i+2)%3][j]:
-                    x, y =  j, (i+2)%3
-                elif (board[i][j] == board[i][(j+1)%3]) and 0 == board[i][(j+2)%3]:
-                    x, y = (j+2)%3, i
-                elif i == j:
-                    if (board[i][j] == board[(i+1)%3][(j+1)%3]) and 0 == board[(i+2)%3][(j+2)%3]:
-                        x, y = (j+2)%3, (i+2)%3
-                elif i+j == 2:
-                   if (board[i][j] == board[(i-1)%3][(j+1)%3]) and 0 == board[(i-2)%3][(j+2)%3]:
-                        x, y = (j+2)%3, (i-2)%3
-            
+       
+    for (i, j) in possible_moves:
+        if (board[(i+1)%3][j] != 0) and (board[(i+1)%3][j] == board[(i+2)%3][j]):
+            x, y =  j, i
+            #print("horizontal")
+            #print(board[(i+1)%3][j], board[(i+2)%3][j])
+        elif (board[i][(j+1)%3] != 0) and (board[i][(j+1)%3] == board[i][(j+2)%3]):
+            x, y = j, i
+            #print("Vertical")
+            #print(board[i][(j+1)%3], board[i][(j+2)%3])
+        elif i == j:
+            if (board[(i+1)%3][(j+1)%3] != 0) and (board[(i+1)%3][(j+1)%3] == board[(i+2)%3][(j+2)%3]):
+                x, y = j, i
+             #   print('Diag 1')
+        elif i+j == 2:
+            if (board[(i-1)%3][(j+1)%3] != 0) and (board[(i-1)%3][(j+1)%3] == board[(i-2)%3][(j+2)%3]):
+                x, y = j, i
+             #   print('Diag 2')
+
     if x == -1 or y == -1:
         x, y = random.choice(possible_moves)
 
