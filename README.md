@@ -3,6 +3,8 @@
 Sam Baker - 01/12/2020
 
  A simple command line based Tic Tac Toe game created as a testing ground for logical and machine learning algorithms.
+ 
+ Note in this project I have not used Tensorflow or any other Machine Learning libraries. My thought process with this project is that by incrementaly building up the logic or nueral networks I use I will be able to obtain a greater understanding of how they work and what considerations go into developing AI for less trivial applications.
 
  # Game Modes
 
