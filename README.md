@@ -4,7 +4,7 @@ Sam Baker - 01/12/2020
 
  A simple command line based Tic Tac Toe game created as a testing ground for logical and machine learning algorithms.
 
- #Game Modes
+ # Game Modes
 
   - 1 - Player Vs Player - Standard Player Vs Player Tic-Tac-Toe
   - 2 - Player Vs RandomAI - Computer will check possible moves and choose 1 at random
@@ -13,7 +13,7 @@ Sam Baker - 01/12/2020
   - 5 - Player Vs BlindAI - Play against Blind AI (Note: Will need to be trained first) 
   - 6 - Blind Training - Training module for blind AI
 
-  #Blind Learning AI
+  # Blind Learning AI
   
   Blind Learning is an extremely simplified machine learning script. The AI has 9 nodes (one for each square on the board) with a weight associated with each. As the AI wins or loses in training these weight values are updated up or down accordingly. As this setup allows the system no visability to the state of the board the AI is ultimately ineffective at developing a strategy to win consistantly against a human player however it functions as a good first step before moving into more complex networks of nodes.
   
