@@ -143,8 +143,6 @@ class BlindAI:
             if self.move_array[move] > w:
                 (x, y) = move
                 #print(move, ",", end = ' ')
-        self.moves_taken.append((x,y))
-  
         return x,y
 
     def train(self, opponent):
@@ -167,7 +165,9 @@ class BlindAI:
                               "Turn Count: ", turn_count, "X, Y : ", x, y)
                         game = 0
                         break
-                    board = markBoard(x, y, player, board)
+                    else:
+                        board = markBoard(x, y, player, board)
+                        self.moves_taken.append((x,y))
                     if checkWin(board):
                         self.updateWeightsWin()
                         self.win_count = self.win_count + 1
@@ -178,12 +178,13 @@ class BlindAI:
     
                 if player == 2:
                    x, y = takeTurnLineAI(board)
-                   if (x >= 0 and x < 3) and (y >= 0 and y < 3):
-                       board = markBoard(x, y, 2, board)
+                   if (x == -1) or (y == -1):
+                        print("Something went wrong, LINE, PMOVES: ", possibleMoves(board),
+                              "Turn Count: ", turn_count, "X, Y : ", x, y)
+                        game = 0
+                        break
                    else:
-                       print('Something has gone terribly wrong')
-                       print('X returned: ', x)
-                       print('Y returned: ', y)
+                       board = markBoard(x, y, 2, board)
 
                    if checkWin(board):
                        #opponent.updateWeightsWin()
