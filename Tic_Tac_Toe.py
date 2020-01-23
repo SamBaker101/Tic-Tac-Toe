@@ -8,9 +8,9 @@ from time import *
 #                     Constants                       #
 #######################################################
 
-WIN_INC = 1.05
-DRAW_INC = 1.01
-LOSS_INC = 0.95
+WIN_INC = 0.05
+DRAW_INC = 0.01
+LOSS_INC = 0.05
 
 #######################################################
 #                       General                       #
@@ -18,15 +18,14 @@ LOSS_INC = 0.95
 
 def chooseMode():
     choice = 0
-    while choice < 1 or choice > 7:
+    while choice < 1 or choice > 6:
         print("Please choose a mode:")
         print("1 - Player Vs Player")
         print("2 - Player Vs RandomAI")
         print("3 - Player Vs ListAI")
         print("4 - Player Vs LineAI")
         print("5 - Player Vs Blind1")
-        print("6 - Player Vs Blind2")
-        print("7 - Blind Training")
+        print("6 - Blind Training")
         choice = int(input())
         
     return choice
@@ -54,12 +53,13 @@ def drawBoard(board):
         print("")
 
 def takeInput():
-    x, y = 0, 0
-    print("please choose a square")
-    print("X:")
-    x = int(input())
-    print("Y:")
-    y = int(input())
+    x, y = -1, -1
+    while (x < 0 or x > 3) or (y < 0 or y > 3):
+        print("please choose a square")
+        print("X:")
+        x = int(input())
+        print("Y:")
+        y = int(input())
     return (x, y)
 
 #######################################################
@@ -71,10 +71,10 @@ def takeTurn(player, board):
     print("")
     print("Player", player, ": ")
     print("")
-    x, y = takeInput()
+    (x, y) = takeInput()
     new_board = markBoard(x, y, player, board)
-    while(new_board == 0):
-        x, y = takeInput()
+    while(new_board == -1):
+        (x, y) = takeInput()
         new_board = markBoard(x, y, player, board)
     drawBoard(new_board)
     return new_board
@@ -87,7 +87,7 @@ def checkBoard(x, y, board):
 def markBoard(x, y, mark, board):
     if (checkBoard(x, y, board) != True):
         print("Not a valid move!")
-        return 0
+        return -1
     else:
         board[y][x] = mark
     return board
@@ -133,7 +133,7 @@ class BlindAI:
         move_array = {}
         for i in range(3):
             for j in range(3):
-                move_array[(i, j)] = random.uniform(0.4, 0.6)
+                move_array[(i, j)] = random.uniform(0.49999, 0.50001)
         return move_array
 
     def chooseMove(self, board):
@@ -179,15 +179,21 @@ class BlindAI:
                         break
     
                 if player == 2:
-                    x, y = opponent.chooseMove(board)
-                    board = markBoard(x, y, player, board)
-                    if checkWin(board):
-                        opponent.updateWeightsWin()
-                        opponent.win_count = opponent.win_count + 1
-                        self.updateWeightsLoss()
-                        self.loss_count = self.loss_count + 1
-                        game = 0
-                        break
+                   x, y = takeTurnLineAI(board)
+                   if (x >= 0 and x < 3) and y >= 0 and y < 3:
+                       board = markBoard(x, y, 2, board)
+                   else:
+                       print('Something has gone terribly wrong')
+                       print('X returned: ', x)
+                       print('Y returned: ', y)
+
+                   if checkWin(board):
+                       #opponent.updateWeightsWin()
+                       opponent.win_count = opponent.win_count + 1
+                       self.updateWeightsLoss()
+                       self.loss_count = self.loss_count + 1
+                       game = 0
+                       break
 
             print('Games Remaining : ', n)
         print('Computer 1 : Wins:', self.win_count, ' Losses: ', self.loss_count, ' Draws : ', self.draw_count)
@@ -203,17 +209,17 @@ class BlindAI:
 
     def updateWeightsDraw(self):
         for move in self.moves_taken:
-            self.move_array[move] = self.move_array[move] * DRAW_INC
+            self.move_array[move] = self.move_array[move] + ((1 - self.move_array[move])*DRAW_INC)
         self.moves_taken = []
 
     def updateWeightsWin(self):
         for move in self.moves_taken:
-            self.move_array[move] = self.move_array[move] * WIN_INC
+            self.move_array[move] = self.move_array[move] + ((1 - self.move_array[move])*WIN_INC)
         self.moves_taken = []
 
     def updateWeightsLoss(self):
         for move in self.moves_taken:
-            self.move_array[move] = self.move_array[move] * LOSS_INC
+            self.move_array[move] = self.move_array[move] - ((1 - self.move_array[move])*LOSS_INC)
         self.moves_taken = []
 
 #######################################################
@@ -226,8 +232,7 @@ def takeTurnAI(board, mode):
         2: takeTurnRandomAI(board),
         3: takeTurnListAI(board),
         4: takeTurnLineAI(board),
-        5: Blind1.chooseMove(board),
-        6: Blind2.chooseMove(board)}
+        5: Blind1.chooseMove(board)}
     x, y = switcher.get(mode, "Invalid Mode Selection")
     if (x >= 0 and x < 3) and y >= 0 and y < 3:
         board = markBoard(x, y, 2, board)
@@ -243,7 +248,6 @@ def takeTurnAI(board, mode):
     return board  
 
 def takeTurnRandomAI(board):
-    sleep(0.5)
     possible_moves = possibleMoves(board)
     x, y = random.choice(possible_moves)
     return x, y
@@ -260,7 +264,7 @@ def takeTurnLineAI(board):
     x, y = -1, -1
     possible_moves = possibleMoves(board)
        
-    for (i, j) in possible_moves:
+    for (j, i) in possible_moves:
         if (board[(i+1)%3][j] != 0) and (board[(i+1)%3][j] == board[(i+2)%3][j]):
             x, y =  j, i
             #print("horizontal")
@@ -279,7 +283,7 @@ def takeTurnLineAI(board):
              #   print('Diag 2')
 
     if x == -1 or y == -1:
-        x, y = random.choice(possible_moves)
+        (x, y) = random.choice(possible_moves)
 
     return x, y
 
@@ -299,7 +303,7 @@ def main():
     while(running):
         mode = chooseMode()
 
-        if mode == 7:
+        if mode == 6:
             Blind1.train(Blind2)
             won = True
 
