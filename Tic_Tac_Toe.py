@@ -234,7 +234,7 @@ class BlindAI:
         print("Loss: ", end = '')
         for move in self.moves_taken:
             print(move, ",", end = ' ')
-            self.move_array[move] = abs(self.move_array[move] - (abs(self.move_array[move] - 1)*LOSS_INC))
+            self.move_array[move] = abs(self.move_array[move] - (self.move_array[move])*LOSS_INC)
         self.moves_taken = []
 
 #######################################################
