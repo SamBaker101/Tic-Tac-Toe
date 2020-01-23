@@ -8,9 +8,9 @@ from time import *
 #                     Constants                       #
 #######################################################
 
-WIN_INC = 0.05
-DRAW_INC = 0.01
-LOSS_INC = 0.05
+WIN_INC = 0.005
+DRAW_INC = 0.001
+LOSS_INC = 0.005
 
 #######################################################
 #                       General                       #
@@ -234,7 +234,7 @@ class BlindAI:
         print("Loss: ", end = '')
         for move in self.moves_taken:
             print(move, ",", end = ' ')
-            self.move_array[move] = self.move_array[move] - ((1 - self.move_array[move])*LOSS_INC)
+            self.move_array[move] = abs(self.move_array[move] - (abs(self.move_array[move] - 1)*LOSS_INC))
         self.moves_taken = []
 
 #######################################################
