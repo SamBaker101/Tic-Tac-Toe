@@ -87,15 +87,15 @@ def checkBoard(x, y, board):
 def markBoard(x, y, mark, board):
     if (checkBoard(x, y, board) != True):
         print("Not a valid move!")
-        return -1
+        return 
     else:
         board[y][x] = mark
     return board
 
 def possibleMoves(board):
     moves = []
-    for i in range(3):
-        for j in range(3):
+    for i in range(0,3):
+        for j in range(0,3):
             if board[i][j] == 0:
                 moves.append((j, i))
     return moves
@@ -142,45 +142,43 @@ class BlindAI:
         for move in possible_moves:
             if self.move_array[move] > w:
                 (x, y) = move
+                #print(move, ",", end = ' ')
         self.moves_taken.append((x,y))
+  
         return x,y
 
     def train(self, opponent):
         print('How many rounds of training')
         n = int(input())
         while (n >= 0):
+            turn_count = 0
             n = n - 1
             board = setBoard()
             game = 1
             player = random.randint(1,2)
             while(game):
-                player = player + 1
-                
-                if (possibleMoves(board) == []):
-                    game = 0
-                    self.updateWeightsDraw()
-                    self.draw_count = self.draw_count + 1
-                    opponent.updateWeightsDraw()
-                    opponent.draw_count = opponent.draw_count + 1
-                    break
-
                 if player > 2:
                     player = 1
                 
                 if player == 1:
                     x, y = self.chooseMove(board)
+                    if (x == -1) or (y == -1):
+                        print("Something went wrong, BLIND, PMOVES: ", possibleMoves(board),
+                              "Turn Count: ", turn_count, "X, Y : ", x, y)
+                        game = 0
+                        break
                     board = markBoard(x, y, player, board)
                     if checkWin(board):
                         self.updateWeightsWin()
                         self.win_count = self.win_count + 1
-                        opponent.updateWeightsLoss()
+                        #opponent.updateWeightsLoss()
                         opponent.loss_count = opponent.loss_count + 1
                         game = 0
                         break
     
                 if player == 2:
                    x, y = takeTurnLineAI(board)
-                   if (x >= 0 and x < 3) and y >= 0 and y < 3:
+                   if (x >= 0 and x < 3) and (y >= 0 and y < 3):
                        board = markBoard(x, y, 2, board)
                    else:
                        print('Something has gone terribly wrong')
@@ -194,6 +192,16 @@ class BlindAI:
                        self.loss_count = self.loss_count + 1
                        game = 0
                        break
+                
+                player = player + 1
+                turn_count = turn_count + 1
+                if turn_count > 8:
+                    game = 0
+                    self.updateWeightsDraw()
+                    self.draw_count = self.draw_count + 1
+                    #opponent.updateWeightsDraw()
+                    opponent.draw_count = opponent.draw_count + 1
+                    break
 
             print('Games Remaining : ', n)
         print('Computer 1 : Wins:', self.win_count, ' Losses: ', self.loss_count, ' Draws : ', self.draw_count)
@@ -208,17 +216,23 @@ class BlindAI:
                 print('X, Y: ', i, j, ' Weight:', self.move_array[(i,j)])
 
     def updateWeightsDraw(self):
+        print("Draw : ", end = '')
         for move in self.moves_taken:
+            print(move, ",", end = ' ')
             self.move_array[move] = self.move_array[move] + ((1 - self.move_array[move])*DRAW_INC)
         self.moves_taken = []
 
     def updateWeightsWin(self):
+        print("Win : ", end = '')
         for move in self.moves_taken:
+            print(move, ",", end = ' ')
             self.move_array[move] = self.move_array[move] + ((1 - self.move_array[move])*WIN_INC)
         self.moves_taken = []
 
     def updateWeightsLoss(self):
+        print("Loss: ", end = '')
         for move in self.moves_taken:
+            print(move, ",", end = ' ')
             self.move_array[move] = self.move_array[move] - ((1 - self.move_array[move])*LOSS_INC)
         self.moves_taken = []
 
