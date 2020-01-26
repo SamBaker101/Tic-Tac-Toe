@@ -3,6 +3,7 @@
 
 import random
 from time import *
+from One import *
 
 #######################################################
 #                     Constants                       #
@@ -18,7 +19,7 @@ LOSS_INC = 0.005
 
 def chooseMode():
     choice = 0
-    while choice < 1 or choice > 6:
+    while choice < 1 or choice > 8:
         print("Please choose a mode:")
         print("1 - Player Vs Player")
         print("2 - Player Vs RandomAI")
@@ -26,6 +27,8 @@ def chooseMode():
         print("4 - Player Vs LineAI")
         print("5 - Player Vs Blind1")
         print("6 - Blind Training")
+        print("7 - Player Vs OneEye")
+        print("8 - OneEye Training")
         choice = int(input())
         
     return choice
@@ -145,9 +148,41 @@ class BlindAI:
                 #print(move, ",", end = ' ')
         return x,y
 
+    def printWeights(self):
+        for i in range(3):
+            for j in range(3):
+                print('X, Y: ', i, j, ' Weight:', self.move_array[(i,j)])
+
+    def updateWeightsDraw(self):
+        print("Draw : ", end = '')
+        for move in self.moves_taken:
+            print(move, ",", end = ' ')
+            self.move_array[move] = self.move_array[move] + ((1 - self.move_array[move])*DRAW_INC)
+        self.moves_taken = []
+
+    def updateWeightsWin(self):
+        print("Win : ", end = '')
+        for move in self.moves_taken:
+            print(move, ",", end = ' ')
+            self.move_array[move] = self.move_array[move] + ((1 - self.move_array[move])*WIN_INC)
+        self.moves_taken = []
+
+    def updateWeightsLoss(self):
+        print("Loss: ", end = '')
+        for move in self.moves_taken:
+            print(move, ",", end = ' ')
+            self.move_array[move] = abs(self.move_array[move] - (self.move_array[move])*LOSS_INC)
+        self.moves_taken = []
+
     def train(self, opponent):
         print('How many rounds of training')
         n = int(input())
+        train_type = -1
+        while train_type < 1 or train_type > 2:
+            print('Training Type?')
+            print('1 - Random Vs List')
+            print('2 - Blind Vs List')
+            train_type = int(input())
         while (n >= 0):
             turn_count = 0
             n = n - 1
@@ -159,7 +194,11 @@ class BlindAI:
                     player = 1
                 
                 if player == 1:
-                    x, y = self.chooseMove(board)
+                    if train_type == 1:
+                        x, y = takeTurnRandomAI(board)
+                    else:
+                        x, y = self.chooseMove(board)
+                    
                     if (x == -1) or (y == -1):
                         print("Something went wrong, BLIND, PMOVES: ", possibleMoves(board),
                               "Turn Count: ", turn_count, "X, Y : ", x, y)
@@ -177,7 +216,10 @@ class BlindAI:
                         break
     
                 if player == 2:
-                   x, y = takeTurnLineAI(board)
+                   if train_type == 3:
+                       x, y = self.chooseMove(board)
+                   else:
+                       x, y = takeTurnLineAI(board)
                    if (x == -1) or (y == -1):
                         print("Something went wrong, LINE, PMOVES: ", possibleMoves(board),
                               "Turn Count: ", turn_count, "X, Y : ", x, y)
@@ -211,31 +253,144 @@ class BlindAI:
         print('Computer 2 : Wins:', opponent.win_count, ' Losses: ', opponent.loss_count, ' Draws : ', opponent.draw_count)
         opponent.printWeights()
 
-    def printWeights(self):
+class OneEyeAI:
+    def __init__(self):
+        self.Net = self.getNet()
+        self.tileweights = [[0, 0, 0],[0, 0, 0],[0, 0, 0]]
+        self.linksused = []
+        self.win_count = 0
+        self.loss_count = 0
+        self.draw_count = 0
+
+    def getNet(self):    
+        in_list = []
+        out_list = []
         for i in range(3):
             for j in range(3):
-                print('X, Y: ', i, j, ' Weight:', self.move_array[(i,j)])
+                in_list.append((i, j, 0))
+                in_list.append((i, j, 1))
+                in_list.append((i, j, 2))
+                out_list.append((i,j))
+        Net = buildNet(in_list, out_list)
+        return Net
+
+    # This is all very inneficient, will need work
+    def chooseMove(self, board):
+        possible = possibleMoves(board)
+        
+        #define weights for each tile
+        for link in self.Net:
+            x, y, mark = link.source
+            if board[x][y] == mark:
+                self.tileweights[x][y] += link.weight
+        
+        #check possible moves for heighest weight
+        w = 0
+        choice = (x, y)
+        for move in possible:
+            if self.tileweights[x][y] > w:
+                w = self.tileweights[x][y]
+                choice = move
+
+        #update list with links used for move
+        for link in self.Net:
+            xs, ys, mark = link.source
+            xd, yd = link.destination
+            if (board[xs][ys] == mark) and (xd, yd) == move:
+                self.linksused.append(link)
+
+        self.resetTileWeights()
+        return choice
 
     def updateWeightsDraw(self):
         print("Draw : ", end = '')
-        for move in self.moves_taken:
-            print(move, ",", end = ' ')
-            self.move_array[move] = self.move_array[move] + ((1 - self.move_array[move])*DRAW_INC)
-        self.moves_taken = []
+        for link in self.linksused:
+            link.weight = link.weight + ((1 - link.weight)*DRAW_INC)
+        self.linksused = []
 
     def updateWeightsWin(self):
         print("Win : ", end = '')
-        for move in self.moves_taken:
-            print(move, ",", end = ' ')
-            self.move_array[move] = self.move_array[move] + ((1 - self.move_array[move])*WIN_INC)
-        self.moves_taken = []
+        for link in self.linksused:
+            link.weight = link.weight + ((1 - link.weight)*WIN_INC)
+        self.linksused = []
 
     def updateWeightsLoss(self):
         print("Loss: ", end = '')
-        for move in self.moves_taken:
-            print(move, ",", end = ' ')
-            self.move_array[move] = abs(self.move_array[move] - (self.move_array[move])*LOSS_INC)
-        self.moves_taken = []
+        for link in self.linksused:
+            link.weight = link.weight - ((link.weight)*LOSS_INC)
+        self.linksused = []
+
+    def resetTileWeights(self):
+        self.tile_weights = [[0, 0, 0],[0, 0, 0],[0, 0, 0]]
+
+    def trainOneEye(self):
+        print('How many rounds of training')
+        n = int(input())
+        train_type = -1
+        while train_type < 1 or train_type > 2:
+            print('Training Type?')
+            print('1 - Random Vs List')
+            print('2 - OneEye Vs List')
+            train_type = int(input())
+        while (n >= 0):
+            turn_count = 0
+            n = n - 1
+            board = setBoard()
+            game = 1
+            player = random.randint(1,2)
+            while(game):
+                if player > 2:
+                    player = 1
+                
+                if player == 1:
+                    if train_type == 1:
+                        x, y = takeTurnRandomAI(board)
+                    else:
+                        x, y = self.chooseMove(board)
+                    
+                    if (x == -1) or (y == -1):
+                        print("Something went wrong, BLIND, PMOVES: ", possibleMoves(board),
+                              "Turn Count: ", turn_count, "X, Y : ", x, y)
+                        game = 0
+                        break
+                    else:
+                        board = markBoard(x, y, player, board)
+                    if checkWin(board):
+                        self.updateWeightsWin()
+                        self.win_count = self.win_count + 1
+                        game = 0
+                        break
+    
+                if player == 2:
+                   x, y = takeTurnLineAI(board)
+                   if (x == -1) or (y == -1):
+                        print("Something went wrong, LINE, PMOVES: ", possibleMoves(board),
+                              "Turn Count: ", turn_count, "X, Y : ", x, y)
+                        game = 0
+                        break
+                   else:
+                       board = markBoard(x, y, 2, board)
+
+                   if checkWin(board):
+                       self.updateWeightsLoss()
+                       self.loss_count = self.loss_count + 1
+                       game = 0
+                       break
+                
+                player = player + 1
+                turn_count = turn_count + 1
+
+                if turn_count > 8:
+                    game = 0
+                    self.updateWeightsDraw()
+                    self.draw_count = self.draw_count + 1
+                    break
+
+            print('Games Remaining : ', n)
+        print('Computer 1 : Wins:', self.win_count, ' Losses: ', self.loss_count, ' Draws : ', self.draw_count)
+
+        for link in self.Net:
+            print(link.weight, ', ', end = '')
 
 #######################################################
 #                   Logical   AI                      #
@@ -247,7 +402,8 @@ def takeTurnAI(board, mode):
         2: takeTurnRandomAI(board),
         3: takeTurnListAI(board),
         4: takeTurnLineAI(board),
-        5: Blind1.chooseMove(board)}
+        5: Blind1.chooseMove(board),
+        7: OneEye.chooseMove(board)}
     x, y = switcher.get(mode, "Invalid Mode Selection")
     if (x >= 0 and x < 3) and y >= 0 and y < 3:
         board = markBoard(x, y, 2, board)
@@ -309,6 +465,9 @@ def takeTurnLineAI(board):
 Blind1 = BlindAI('Blind1')
 Blind2 = BlindAI('Blind2')
 
+OneEye = OneEyeAI()
+
+
 def main():
     mode = 2
     running = True
@@ -320,6 +479,10 @@ def main():
 
         if mode == 6:
             Blind1.train(Blind2)
+            won = True
+
+        if mode == 8:
+            OneEye.trainOneEye()
             won = True
 
         turn_count = 0
