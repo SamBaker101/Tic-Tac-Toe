@@ -19,4 +19,8 @@ Sam Baker - 01/12/2020
   
   Blind Learning is an extremely simplified machine learning script. The AI has 9 nodes (one for each square on the board) with a weight associated with each. As the AI wins or loses in training these weight values are updated up or down accordingly. As this setup allows the system no visability to the state of the board the AI is ultimately ineffective at developing a strategy to win consistantly against a human player however it functions as a good first step before moving into more complex networks of nodes.
   
+# One-Eyed Learning (In Progress)
 
+ After playing with Blind learning I wanted to add additional complexity to work towards an algorithm with the capability of learning the game and possibly developing a winning strategy. For One-Eyed learning I will be creating a set of 27 (9x3) nodes. There will be 9 inputs (one for each tile on the board.) These 9 inputs will have one of three states (free space, x, o) which will each point to one of the afformentioned nodes. These nodes will each in turn connect to the 9 possible outputs on the board with a weight attached. By tallying the weights associated with each possible move the algorithm will decide how to move. After each game the algorithm will modify the weights as required.
+ 
+ I am still in the very early stages of building out this algorithm but will provide more details as I develope the code.
