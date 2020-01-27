@@ -261,6 +261,7 @@ class OneEyeAI:
         self.win_count = 0
         self.loss_count = 0
         self.draw_count = 0
+        
 
     def getNet(self):    
         in_list = []
@@ -281,18 +282,18 @@ class OneEyeAI:
         #define weights for each tile
         for link in self.Net:
             x, y, mark = link.source
-            if board[x][y] == mark:
+            if board[y][x] == mark:
                 self.tileweights[x][y] += link.weight
         
         #check possible moves for heighest weight
         w = 0
-        choice = (x, y)
+        choice = (-1, -1)
         for move in possible:
             if self.tileweights[x][y] > w:
                 w = self.tileweights[x][y]
                 choice = move
         
-        if move == (-1, -1):
+        if choice == (-1, -1):
             print('Something has gone awry with the chooseMove function')
 
         self.resetTileWeights()
@@ -302,7 +303,7 @@ class OneEyeAI:
         for link in self.Net:
             xs, ys, mark = link.source
             xd, yd = link.destination
-            if (board[xs][ys] == mark) and (xd, yd) == (x, y):
+            if (board[ys][xs] == mark) and (xd, yd) == (x, y):
                 self.linksused.append(link)
 
     def updateWeightsDraw(self):
@@ -323,7 +324,8 @@ class OneEyeAI:
             link.weight = link.weight - ((link.weight)*LOSS_INC)
         self.linksused = []
 
-    def resetTileWeights(self): self.tile_weights = [[0, 0, 0],[0, 0, 0],[0, 0, 0]]
+    def resetTileWeights(self): 
+        self.tileweights = [[0, 0, 0],[0, 0, 0],[0, 0, 0]]
 
     def trainOneEye(self):
         print('How many rounds of training')
