@@ -291,16 +291,19 @@ class OneEyeAI:
             if self.tileweights[x][y] > w:
                 w = self.tileweights[x][y]
                 choice = move
-
-        #update list with links used for move
-        for link in self.Net:
-            xs, ys, mark = link.source
-            xd, yd = link.destination
-            if (board[xs][ys] == mark) and (xd, yd) == move:
-                self.linksused.append(link)
+        
+        if move == (-1, -1):
+            print('Something has gone awry with the chooseMove function')
 
         self.resetTileWeights()
         return choice
+
+    def updateLinksUsed(self, x, y, board):
+        for link in self.Net:
+            xs, ys, mark = link.source
+            xd, yd = link.destination
+            if (board[xs][ys] == mark) and (xd, yd) == (x, y):
+                self.linksused.append(link)
 
     def updateWeightsDraw(self):
         print("Draw : ", end = '')
@@ -320,8 +323,7 @@ class OneEyeAI:
             link.weight = link.weight - ((link.weight)*LOSS_INC)
         self.linksused = []
 
-    def resetTileWeights(self):
-        self.tile_weights = [[0, 0, 0],[0, 0, 0],[0, 0, 0]]
+    def resetTileWeights(self): self.tile_weights = [[0, 0, 0],[0, 0, 0],[0, 0, 0]]
 
     def trainOneEye(self):
         print('How many rounds of training')
@@ -338,6 +340,7 @@ class OneEyeAI:
             board = setBoard()
             game = 1
             player = random.randint(1,2)
+            self.linksused = []
             while(game):
                 if player > 2:
                     player = 1
@@ -345,6 +348,7 @@ class OneEyeAI:
                 if player == 1:
                     if train_type == 1:
                         x, y = takeTurnRandomAI(board)
+
                     else:
                         x, y = self.chooseMove(board)
                     
@@ -354,7 +358,9 @@ class OneEyeAI:
                         game = 0
                         break
                     else:
-                        board = markBoard(x, y, player, board)
+                        board = markBoard(x, y, player, board)                      
+                        OneEye.updateLinksUsed(x, y, board)
+
                     if checkWin(board):
                         self.updateWeightsWin()
                         self.win_count = self.win_count + 1
