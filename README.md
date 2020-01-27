@@ -13,7 +13,9 @@ Sam Baker - 01/12/2020
   - 3 - Player Vs ListAI - Computer has a list of possible moves, it will make the first available move from this list
   - 4 - Player Vs LineAI - Computer will search the free spaces on the board for lines which can be completed during it's turn and completes them. This algorithm will both complete the computers lines to win the game and your lines to block you. If no possible lines are present the computer moves at random.
   - 5 - Player Vs BlindAI - Play against Blind AI (Note: Will need to be trained first) 
-  - 6 - Blind Training - Training module for blind AI
+  - 6 - Blind Training - Training module for Blind AI
+  - 7 - Player Vs OneEye AI - Play against OneEye AI (Note: Will need to be trained first) 
+  - 8 - OneEye Training - Training module for OneEye AI
 
   # Blind Learning AI
   
