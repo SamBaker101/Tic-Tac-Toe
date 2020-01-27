@@ -289,6 +289,7 @@ class OneEyeAI:
         w = 0
         choice = (-1, -1)
         for move in possible:
+            x, y = move
             if self.tileweights[x][y] > w:
                 w = self.tileweights[x][y]
                 choice = move
