@@ -12,6 +12,6 @@ def buildNet(input_list, output_list):
     net = []
     for input in input_list:
         for output in output_list:
-           net.append(Link(input, random.randint(0,1), output))
+           net.append(Link(input, random.uniform(0.499,0.501), output))
     return net
 

@@ -261,6 +261,20 @@ class OneEyeAI:
         self.win_count = 0
         self.loss_count = 0
         self.draw_count = 0
+
+        #Troubleshooting function to show variables
+    def showMe(self, board, move):
+        possible = possibleMoves(board)
+        print('PMOVES:', possible)
+        for move in possible:
+            x, y = move
+            total = 0
+            for weight in self.tileweights[x][y]:
+                total += weight 
+            total = total/9
+            print('X, Y' , x, ',', y, 'Total', total)
+        print('MOVE: ', move)
+        #drawBoard(board)
         
     def resetCounts(self):
         self.win_count = 0
@@ -294,7 +308,7 @@ class OneEyeAI:
         choice = possible[0]
 
         for move in possible:
-            x, y = move
+            (x, y) = move
             total = 0
             for weight in self.tileweights[x][y]:
                 total += weight 
@@ -306,6 +320,7 @@ class OneEyeAI:
         if choice == (-1, -1):
             print('Something has gone awry with the chooseMove function')
 
+        self.showMe(board, choice)
         self.resetTileWeights()
         return choice
 
@@ -317,20 +332,20 @@ class OneEyeAI:
                 self.linksused.append(link)
 
     def updateWeightsDraw(self):
-        print("Draw : ", end = '')
+        #print("Draw : ", end = '')
         for link in self.linksused:
             link.weight = link.weight + ((1 - link.weight)*DRAW_INC)
         self.linksused = []
 
     def updateWeightsWin(self):
-        print("Win : ", end = '')
+        #print("Win : ", end = '')
         for link in self.linksused:
             link.weight = link.weight + ((1 - link.weight)*random.uniform(0.01, 0.1))
             #link.weight = 1
         self.linksused = []
 
     def updateWeightsLoss(self):
-        print("Loss: ", end = '')
+        #print("Loss: ", end = '')
         for link in self.linksused:
             link.weight = link.weight - ((link.weight)*random.uniform(0.04, 0.06))
             #link.weight = 0
@@ -347,21 +362,33 @@ class OneEyeAI:
 
     def chooseTrainType(self):
         train_type = -1
-        while train_type < 1 or train_type > 3:
+        while train_type < 1 or train_type > 4:
             print('Training Type?')
             print('1 - Random Vs List')
             print('2 - OneEye Vs List')
             print('3 - OneEye Vs OneEye2')
+            print('4 - OneEye Vs OneEye2 - Batch!')
             train_type = int(input())
         return train_type 
 
     def trainOneEye(self):
-        
-        self.resetCounts()
-        OneEye2.resetCounts()
 
         n = self.chooseRounds()
         train_type = self.chooseTrainType()
+
+        if train_type == 4:
+            print('How many batches?')
+            m = int(input())
+            for round in range(m):
+               self.trainCycle(n, 3)
+        else:
+            self.trainCycle(n, train_type)
+
+
+    def trainCycle(self, n, train_type):
+        
+        self.resetCounts()
+        OneEye2.resetCounts()
 
         while (n >= 0):
             turn_count = 0
@@ -380,19 +407,22 @@ class OneEyeAI:
                 
                 #Primary AI's turn
                 if player == 1:
+                    x,y = -1, -1
                     if train_type == 1:
-                        x, y = takeTurnRandomAI(board)
-
+                        (x, y) = takeTurnRandomAI(board)
+                        print('Random', x, ', ', y)
                     else:
-                        x, y = self.chooseMove(board)
-                    
+                        (x, y) = self.chooseMove(board)
+                        print('AI choice', x, ', ', y)
+
                     if (x == -1) or (y == -1):
                         print("Something went wrong, BLIND, PMOVES: ", possibleMoves(board),
                               "Turn Count: ", turn_count, "X, Y : ", x, y)
                         game = 0
                         break
                     else:
-                        board = markBoard(x, y, player, board)                      
+                        
+                        board = markBoard(x, y, player, board)   
                         self.updateLinksUsed(x, y, board)
 
                     if checkWin(board):
@@ -400,7 +430,7 @@ class OneEyeAI:
                         self.win_count = self.win_count + 1
                         if train_type == 3:
                             OneEye2.updateWeightsLoss()
-                            OneEye2.loss_count = self.loss_count + 1
+                            OneEye2.loss_count += 1
                         game = 0
                         break
     
@@ -424,7 +454,7 @@ class OneEyeAI:
                        self.loss_count = self.loss_count + 1
                        if train_type == 3:
                            OneEye2.updateWeightsLoss()
-                           OneEye2.loss_count = self.loss_count + 1
+                           OneEye2.win_count += 1
                        game = 0
                        break
                 
@@ -438,19 +468,21 @@ class OneEyeAI:
                     self.draw_count = self.draw_count + 1
                     break
 
-            print('Games Remaining : ', n)
+            #print('Games Remaining : ', n)
         print('Computer 1 : Wins:', self.win_count, ' Losses: ', self.loss_count, ' Draws : ', self.draw_count)
 
         #Print link weights for troubleshooting 
-        for link in self.Net:
-            print(link.weight, ', ', end = '')
+        #for link in self.Net:
+            #print(link.weight, ', ', end = '')
 
         #Take best performing network and resets opponent to random values
+        print(self.win_count, OneEye2.win_count)
         if train_type == 3:
             if self.win_count < OneEye2.win_count:
+                print('TRADE PLACES!')
                 self.Net = OneEye2.Net
-                OneEye2.Net = getNet()
-                
+        OneEye2.Net = OneEye2.getNet()
+
 #######################################################
 #                   Logical   AI                      #
 #######################################################
