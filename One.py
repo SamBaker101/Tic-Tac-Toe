@@ -1,4 +1,6 @@
 
+import random
+
 class Link:
     def __init__(self, source, weight, destination):
         self.source = source
@@ -10,6 +12,6 @@ def buildNet(input_list, output_list):
     net = []
     for input in input_list:
         for output in output_list:
-           net.append(Link(input, 0.5, output))
+           net.append(Link(input, random.randint(0,1), output))
     return net
 

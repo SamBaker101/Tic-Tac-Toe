@@ -256,12 +256,16 @@ class BlindAI:
 class OneEyeAI:
     def __init__(self):
         self.Net = self.getNet()
-        self.tileweights = [[0, 0, 0],[0, 0, 0],[0, 0, 0]]
+        self.tileweights = [[[], [], []],[[], [], []],[[], [], []]]
         self.linksused = []
         self.win_count = 0
         self.loss_count = 0
         self.draw_count = 0
         
+    def resetCounts(self):
+        self.win_count = 0
+        self.loss_count = 0
+        self.draw_count = 0
 
     def getNet(self):    
         in_list = []
@@ -283,15 +287,20 @@ class OneEyeAI:
         for link in self.Net:
             x, y, mark = link.source
             if board[y][x] == mark:
-                self.tileweights[x][y] += link.weight
-        
+                self.tileweights[x][y].append(link.weight)
+
         #check possible moves for heighest weight
         w = 0
-        choice = (-1, -1)
+        choice = possible[0]
+
         for move in possible:
             x, y = move
-            if self.tileweights[x][y] > w:
-                w = self.tileweights[x][y]
+            total = 0
+            for weight in self.tileweights[x][y]:
+                total += weight 
+            total = total/9
+            if total > w:
+                w = total
                 choice = move
         
         if choice == (-1, -1):
@@ -316,38 +325,60 @@ class OneEyeAI:
     def updateWeightsWin(self):
         print("Win : ", end = '')
         for link in self.linksused:
-            link.weight = link.weight + ((1 - link.weight)*WIN_INC)
+            link.weight = link.weight + ((1 - link.weight)*random.uniform(0.01, 0.1))
+            #link.weight = 1
         self.linksused = []
 
     def updateWeightsLoss(self):
         print("Loss: ", end = '')
         for link in self.linksused:
-            link.weight = link.weight - ((link.weight)*LOSS_INC)
+            link.weight = link.weight - ((link.weight)*random.uniform(0.04, 0.06))
+            #link.weight = 0
+            #print(link.source, ', ', link.destination, ', ', link.weight)
         self.linksused = []
 
     def resetTileWeights(self): 
-        self.tileweights = [[0, 0, 0],[0, 0, 0],[0, 0, 0]]
+        self.tileweights = [[[], [], []],[[], [], []],[[], [], []]]
 
-    def trainOneEye(self):
+    def chooseRounds(self):
         print('How many rounds of training')
         n = int(input())
+        return n
+
+    def chooseTrainType(self):
         train_type = -1
-        while train_type < 1 or train_type > 2:
+        while train_type < 1 or train_type > 3:
             print('Training Type?')
             print('1 - Random Vs List')
             print('2 - OneEye Vs List')
+            print('3 - OneEye Vs OneEye2')
             train_type = int(input())
+        return train_type 
+
+    def trainOneEye(self):
+        
+        self.resetCounts()
+        OneEye2.resetCounts()
+
+        n = self.chooseRounds()
+        train_type = self.chooseTrainType()
+
         while (n >= 0):
             turn_count = 0
-            n = n - 1
+            n -= 1
             board = setBoard()
             game = 1
             player = random.randint(1,2)
+
             self.linksused = []
+            OneEye2.linksused = []
+            
             while(game):
+                
                 if player > 2:
                     player = 1
                 
+                #Primary AI's turn
                 if player == 1:
                     if train_type == 1:
                         x, y = takeTurnRandomAI(board)
@@ -362,16 +393,24 @@ class OneEyeAI:
                         break
                     else:
                         board = markBoard(x, y, player, board)                      
-                        OneEye.updateLinksUsed(x, y, board)
+                        self.updateLinksUsed(x, y, board)
 
                     if checkWin(board):
                         self.updateWeightsWin()
                         self.win_count = self.win_count + 1
+                        if train_type == 3:
+                            OneEye2.updateWeightsLoss()
+                            OneEye2.loss_count = self.loss_count + 1
                         game = 0
                         break
     
+                #Player 2's turn
                 if player == 2:
-                   x, y = takeTurnLineAI(board)
+                   if train_type == 3:
+                       x, y = OneEye2.chooseMove(board)
+                       OneEye2.updateLinksUsed(x, y, board)
+                   else:
+                       x, y = takeTurnLineAI(board)
                    if (x == -1) or (y == -1):
                         print("Something went wrong, LINE, PMOVES: ", possibleMoves(board),
                               "Turn Count: ", turn_count, "X, Y : ", x, y)
@@ -383,12 +422,16 @@ class OneEyeAI:
                    if checkWin(board):
                        self.updateWeightsLoss()
                        self.loss_count = self.loss_count + 1
+                       if train_type == 3:
+                           OneEye2.updateWeightsLoss()
+                           OneEye2.loss_count = self.loss_count + 1
                        game = 0
                        break
                 
-                player = player + 1
-                turn_count = turn_count + 1
+                player += 1
+                turn_count += 1
 
+                #Check for draw
                 if turn_count > 8:
                     game = 0
                     self.updateWeightsDraw()
@@ -398,9 +441,16 @@ class OneEyeAI:
             print('Games Remaining : ', n)
         print('Computer 1 : Wins:', self.win_count, ' Losses: ', self.loss_count, ' Draws : ', self.draw_count)
 
+        #Print link weights for troubleshooting 
         for link in self.Net:
             print(link.weight, ', ', end = '')
 
+        #Take best performing network and resets opponent to random values
+        if train_type == 3:
+            if self.win_count < OneEye2.win_count:
+                self.Net = OneEye2.Net
+                OneEye2.Net = getNet()
+                
 #######################################################
 #                   Logical   AI                      #
 #######################################################
@@ -475,6 +525,8 @@ Blind1 = BlindAI('Blind1')
 Blind2 = BlindAI('Blind2')
 
 OneEye = OneEyeAI()
+OneEye2 = OneEyeAI()
+
 
 
 def main():
