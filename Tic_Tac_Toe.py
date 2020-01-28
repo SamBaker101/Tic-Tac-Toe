@@ -180,8 +180,8 @@ class BlindAI:
         train_type = -1
         while train_type < 1 or train_type > 2:
             print('Training Type?')
-            print('1 - Random Vs List')
-            print('2 - Blind Vs List')
+            print('1 - Random Vs Line')
+            print('2 - Blind Vs Line')
             train_type = int(input())
         while (n >= 0):
             turn_count = 0
@@ -210,7 +210,7 @@ class BlindAI:
                     if checkWin(board):
                         self.updateWeightsWin()
                         self.win_count = self.win_count + 1
-                        #opponent.updateWeightsLoss()
+                        opponent.updateWeightsLoss()
                         opponent.loss_count = opponent.loss_count + 1
                         game = 0
                         break
@@ -229,7 +229,7 @@ class BlindAI:
                        board = markBoard(x, y, 2, board)
 
                    if checkWin(board):
-                       #opponent.updateWeightsWin()
+                       opponent.updateWeightsWin()
                        opponent.win_count = opponent.win_count + 1
                        self.updateWeightsLoss()
                        self.loss_count = self.loss_count + 1
@@ -242,7 +242,7 @@ class BlindAI:
                     game = 0
                     self.updateWeightsDraw()
                     self.draw_count = self.draw_count + 1
-                    #opponent.updateWeightsDraw()
+                    opponent.updateWeightsDraw()
                     opponent.draw_count = opponent.draw_count + 1
                     break
 
@@ -266,13 +266,13 @@ class OneEyeAI:
     def showMe(self, board, move):
         possible = possibleMoves(board)
         print('PMOVES:', possible)
-        for move in possible:
-            x, y = move
-            total = 0
-            for weight in self.tileweights[x][y]:
-                total += weight 
-            total = total/9
-            print('X, Y' , x, ',', y, 'Total', total)
+        #for move in possible:
+         #   x, y = move
+          #  total = 0
+           # for weight in self.tileweights[x][y]:
+            #    total += weight 
+            #total = total/9
+            #print('X, Y' , x, ',', y, 'Total', total)
         print('MOVE: ', move)
         #drawBoard(board)
         
@@ -313,14 +313,13 @@ class OneEyeAI:
             for weight in self.tileweights[x][y]:
                 total += weight 
             total = total/9
+
             if total > w:
                 w = total
                 choice = move
-        
         if choice == (-1, -1):
             print('Something has gone awry with the chooseMove function')
 
-        self.showMe(board, choice)
         self.resetTileWeights()
         return choice
 
@@ -340,14 +339,14 @@ class OneEyeAI:
     def updateWeightsWin(self):
         #print("Win : ", end = '')
         for link in self.linksused:
-            link.weight = link.weight + ((1 - link.weight)*random.uniform(0.01, 0.1))
+            link.weight = link.weight + ((1 - link.weight)*random.uniform(0.01, 0.5))
             #link.weight = 1
         self.linksused = []
 
     def updateWeightsLoss(self):
         #print("Loss: ", end = '')
         for link in self.linksused:
-            link.weight = link.weight - ((link.weight)*random.uniform(0.04, 0.06))
+            link.weight = link.weight - ((link.weight)*random.uniform(0.01, 0.5))
             #link.weight = 0
             #print(link.source, ', ', link.destination, ', ', link.weight)
         self.linksused = []
@@ -364,8 +363,8 @@ class OneEyeAI:
         train_type = -1
         while train_type < 1 or train_type > 4:
             print('Training Type?')
-            print('1 - Random Vs List')
-            print('2 - OneEye Vs List')
+            print('1 - Random Vs Line')
+            print('2 - OneEye Vs Line')
             print('3 - OneEye Vs OneEye2')
             print('4 - OneEye Vs OneEye2 - Batch!')
             train_type = int(input())
@@ -383,7 +382,6 @@ class OneEyeAI:
                self.trainCycle(n, 3)
         else:
             self.trainCycle(n, train_type)
-
 
     def trainCycle(self, n, train_type):
         
@@ -407,13 +405,13 @@ class OneEyeAI:
                 
                 #Primary AI's turn
                 if player == 1:
-                    x,y = -1, -1
+                    (x,y) = -1, -1
                     if train_type == 1:
                         (x, y) = takeTurnRandomAI(board)
-                        print('Random', x, ', ', y)
+                        #print('Random', x, ', ', y)
                     else:
                         (x, y) = self.chooseMove(board)
-                        print('AI choice', x, ', ', y)
+                        #print('AI choice', x, ', ', y)
 
                     if (x == -1) or (y == -1):
                         print("Something went wrong, BLIND, PMOVES: ", possibleMoves(board),
@@ -422,14 +420,14 @@ class OneEyeAI:
                         break
                     else:
                         
-                        board = markBoard(x, y, player, board)   
-                        self.updateLinksUsed(x, y, board)
+                        board = markBoard(x, y, player, board)
+                        #self.updateLinksUsed(x, y, board)
 
                     if checkWin(board):
                         self.updateWeightsWin()
                         self.win_count = self.win_count + 1
                         if train_type == 3:
-                            OneEye2.updateWeightsLoss()
+                            #OneEye2.updateWeightsLoss()
                             OneEye2.loss_count += 1
                         game = 0
                         break
@@ -450,10 +448,10 @@ class OneEyeAI:
                        board = markBoard(x, y, 2, board)
 
                    if checkWin(board):
-                       self.updateWeightsLoss()
+                       #self.updateWeightsLoss()
                        self.loss_count = self.loss_count + 1
                        if train_type == 3:
-                           OneEye2.updateWeightsLoss()
+                           #OneEye2.updateWeightsLoss()
                            OneEye2.win_count += 1
                        game = 0
                        break
@@ -464,7 +462,7 @@ class OneEyeAI:
                 #Check for draw
                 if turn_count > 8:
                     game = 0
-                    self.updateWeightsDraw()
+                    #self.updateWeightsDraw()
                     self.draw_count = self.draw_count + 1
                     break
 
@@ -479,8 +477,8 @@ class OneEyeAI:
         print(self.win_count, OneEye2.win_count)
         if train_type == 3:
             if self.win_count < OneEye2.win_count:
-                print('TRADE PLACES!')
-                self.Net = OneEye2.Net
+                for i in range(len(self.Net)):
+                    self.Net[i].weight = (self.Net[i].weight + OneEye2.Net[i].weight)/2 
         OneEye2.Net = OneEye2.getNet()
 
 #######################################################
