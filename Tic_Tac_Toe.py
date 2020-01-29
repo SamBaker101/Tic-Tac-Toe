@@ -331,20 +331,20 @@ class OneEyeAI:
                 self.linksused.append(link)
 
     def updateWeightsDraw(self):
-        #print("Draw : ", end = '')
+        print("Draw : ", end = '')
         for link in self.linksused:
             link.weight = link.weight + ((1 - link.weight)*DRAW_INC)
         self.linksused = []
 
     def updateWeightsWin(self):
-        #print("Win : ", end = '')
+        print("Win : ", end = '')
         for link in self.linksused:
             link.weight = link.weight + ((1 - link.weight)*random.uniform(0.01, 0.5))
             #link.weight = 1
         self.linksused = []
 
     def updateWeightsLoss(self):
-        #print("Loss: ", end = '')
+        print("Loss: ", end = '')
         for link in self.linksused:
             link.weight = link.weight - ((link.weight)*random.uniform(0.01, 0.5))
             #link.weight = 0
@@ -421,13 +421,13 @@ class OneEyeAI:
                     else:
                         
                         board = markBoard(x, y, player, board)
-                        #self.updateLinksUsed(x, y, board)
+                        self.updateLinksUsed(x, y, board)
 
                     if checkWin(board):
                         self.updateWeightsWin()
                         self.win_count = self.win_count + 1
                         if train_type == 3:
-                            #OneEye2.updateWeightsLoss()
+                            OneEye2.updateWeightsLoss()
                             OneEye2.loss_count += 1
                         game = 0
                         break
@@ -448,10 +448,10 @@ class OneEyeAI:
                        board = markBoard(x, y, 2, board)
 
                    if checkWin(board):
-                       #self.updateWeightsLoss()
+                       self.updateWeightsLoss()
                        self.loss_count = self.loss_count + 1
                        if train_type == 3:
-                           #OneEye2.updateWeightsLoss()
+                           OneEye2.updateWeightsLoss()
                            OneEye2.win_count += 1
                        game = 0
                        break
@@ -466,7 +466,7 @@ class OneEyeAI:
                     self.draw_count = self.draw_count + 1
                     break
 
-            #print('Games Remaining : ', n)
+            print('Games Remaining : ', n)
         print('Computer 1 : Wins:', self.win_count, ' Losses: ', self.loss_count, ' Draws : ', self.draw_count)
 
         #Print link weights for troubleshooting 

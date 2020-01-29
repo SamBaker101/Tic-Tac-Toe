@@ -11,7 +11,15 @@ class Link:
 def buildNet(input_list, output_list):
     net = []
     for input in input_list:
-        for output in output_list:
-           net.append(Link(input, random.uniform(0.01,0.99), output))
+        (xi, yi, mark) = input
+        if mark == 0:
+            net.append(Link(input, random.uniform(0.01,0.99), (xi, yi)))
+        else:
+            for output in output_list:
+                if (xi, yi) != output:
+                    net.append(Link(input, random.uniform(0.01,0.99), output))
+    
     return net
 
+def printNet(net):
+    for link in net: print(link.source, link.weight, link.destination)
