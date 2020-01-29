@@ -158,21 +158,18 @@ class BlindAI:
                 print('X, Y: ', i, j, ' Weight:', self.move_array[(i,j)])
 
     def updateWeightsDraw(self):
-        print("Draw : ", end = '')
         for move in self.moves_taken:
             print(move, ",", end = ' ')
             self.move_array[move] = self.move_array[move] + ((1 - self.move_array[move])*DRAW_INC)
         self.moves_taken = []
 
     def updateWeightsWin(self):
-        print("Win : ", end = '')
         for move in self.moves_taken:
             print(move, ",", end = ' ')
             self.move_array[move] = self.move_array[move] + ((1 - self.move_array[move])*WIN_INC)
         self.moves_taken = []
 
     def updateWeightsLoss(self):
-        print("Loss: ", end = '')
         for move in self.moves_taken:
             print(move, ",", end = ' ')
             self.move_array[move] = abs(self.move_array[move] - (self.move_array[move])*LOSS_INC)
@@ -402,6 +399,31 @@ def trainStart():
     else:
         trainCycle(player1, player2, n, train_type)
 
+def trainTurn(player, opponent, mark, game, turn_count, board):
+    (x,y) = (-1, -1)
+    (x,y) = player.chooseMove(board)
+                   
+    if (x == -1) or (y == -1):
+        print("Something went wrong, BLIND, PMOVES: ", possibleMoves(board),
+                "Turn Count: ", turn_count, "X, Y : ", x, y)
+        game = 0
+        return game
+
+    else:          
+        board = markBoard(x, y, mark, board)
+        if player.type == 2: player.updateLinksUsed(x, y, board)
+
+    if checkWin(board):
+        if player.type: 
+            player.updateWeightsWin()
+            player.win_count += 1
+        if opponent.type:
+            opponent.updateWeightsLoss()
+            opponent.loss_count += 1
+        game = 0
+        return game
+    return game
+
 def trainCycle(player1, player2, n, type):
         
         player1.resetCounts()
@@ -426,54 +448,12 @@ def trainCycle(player1, player2, n, type):
                 
                 #Primary AI's turn
                 if player == 1:
-                    (x,y) = (-1, -1)
-                    (x,y) = player1.chooseMove(board)
-                   
-                    if (x == -1) or (y == -1):
-                        print("Something went wrong, BLIND, PMOVES: ", possibleMoves(board),
-                              "Turn Count: ", turn_count, "X, Y : ", x, y)
-                        game = 0
-                        break
-                    else:
-                        
-                        board = markBoard(x, y, player, board)
-                        if player1.type == 2: player1.updateLinksUsed(x, y, board)
-
-                    if checkWin(board):
-                        if player1.type: 
-                            player1.updateWeightsWin()
-                            player1.win_count += 1
-                        if player2.type:
-                            player2.updateWeightsLoss()
-                            player2.loss_count += 1
-                        game = 0
-                        break
+                    game = trainTurn(player1, player2, 1, game, turn_count, board)
     
                 #Player 2's turn
                 if player == 2:
-                    (x,y) = (-1, -1)
-                    (x,y) = player2.chooseMove(board)
-                   
-                    if (x == -1) or (y == -1):
-                        print("Something went wrong, BLIND, PMOVES: ", possibleMoves(board),
-                              "Turn Count: ", turn_count, "X, Y : ", x, y)
-                        game = 0
-                        break
-                    else:
-                        
-                        board = markBoard(x, y, player, board)
-                        if player2.type == 2: player2.updateLinksUsed(x, y, board)
+                    game = trainTurn(player2, player1, 2, game, turn_count, board)
 
-                    if checkWin(board):
-                        if player2.type: 
-                            player2.updateWeightsWin()
-                            player2.win_count += 1
-                        if player1.type:
-                            player1.updateWeightsLoss()
-                            player1.loss_count += 1
-                        game = 0
-                        break
-                
                 player += 1
                 turn_count += 1
 
@@ -494,7 +474,7 @@ def trainCycle(player1, player2, n, type):
 
         print('Computer 1 : Wins:', player1.win_count, ' Losses: ', player1.loss_count, ' Draws : ', player1.draw_count)
 
-def trainBatch(player1, player2, n):
+def trainBatch(player1, player2, n, type):
 
     if player1.type != 2 or player2.type != 2:
         print('Batch training is currently only implemented for OneEye')
@@ -503,9 +483,9 @@ def trainBatch(player1, player2, n):
         print('How many batches?')
         m = int(input())
         for round in range(m):
-            trainCycle(player1, player2, n)
+            trainCycle(player1, player2, n, type)
             if player1.win_count < player2.win_count:
-                for i in range(len(self.Net)):
+                for i in range(len(player1.Net)):
                     player1.Net[i].weight = (player1.Net[i].weight + player2.Net[i].weight)/2 
             player2.Net = player2.getNet()
 
