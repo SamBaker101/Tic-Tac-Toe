@@ -279,7 +279,7 @@ def takeTurnAI(board, mode):
         2: Random.chooseMove(board),
         3: List.chooseMove(board),
         4: Line.chooseMove(board),
-        5: Blind1.chooseMove(board),
+        5: Blind.chooseMove(board),
         6: OneEye.chooseMove(board)}
     x, y = switcher.get(mode, "Invalid Mode Selection")
     if (x >= 0 and x < 3) and y >= 0 and y < 3:
