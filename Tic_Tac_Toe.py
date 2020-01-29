@@ -4,6 +4,7 @@
 import random
 from time import *
 from One import *
+import matplotlib.pyplot as plt
 
 #######################################################
 #                     Constants                       #
@@ -387,6 +388,16 @@ def choosePlayer2():
     player = switcher.get(n, "Invalid Mode Selection")
     return player
 
+def trainPlot(data):
+    games = []
+    wins = []
+    for point in data:
+        g, w = point
+        games.append(g)
+        wins.append(w)
+    plt.plot(games, wins)
+    plt.show()
+
 def trainStart():
 
     train_type = chooseTrainType()
@@ -430,10 +441,12 @@ def trainCycle(player1, player2, n, type):
         if player2.type: player2.resetCounts()
         
         win_hold = 0
+        game_count = 0
+        game_stats = []
 
-        while (n > 0):
+        while (game_count < n):
             turn_count = 0
-            n -= 1
+            game_count += 1
             board = setBoard()
             game = 1
             player = random.randint(1,2)
@@ -468,13 +481,18 @@ def trainCycle(player1, player2, n, type):
                         player2.draw_count += 1
                     break
 
-            if n%100 == 0 and type == 1: 
-                print('Games Remaining : ', n, 'Win Count: ', player1.win_count, 'Win/100', player1.win_count-win_hold)
+            if (n-game_count)%100 == 0 and type == 1: 
+                print('Games Remaining : ', n-game_count, 'Win Count: ', player1.win_count, 'Win in last 100:', player1.win_count-win_hold)
+                game_stats.append((game_count, player1.win_count-win_hold))
                 win_hold = player1.win_count
 
         print('Computer 1 : Wins:', player1.win_count, ' Losses: ', player1.loss_count, ' Draws : ', player1.draw_count)
+        if type == 1: trainPlot(game_stats)
 
 def trainBatch(player1, player2, n, type):
+
+    data = []
+    batch_count=0
 
     if player1.type != 2 or player2.type != 2:
         print('Batch training is currently only implemented for OneEye')
@@ -483,11 +501,16 @@ def trainBatch(player1, player2, n, type):
         print('How many batches?')
         m = int(input())
         for round in range(m):
+            batch_count += 1
             trainCycle(player1, player2, n, type)
+
             if player1.win_count < player2.win_count:
                 for i in range(len(player1.Net)):
                     player1.Net[i].weight = (player1.Net[i].weight + player2.Net[i].weight)/2 
             player2.Net = player2.getNet()
+            
+            data.append((batch_count, player1.win_count))
+        trainPlot(data)
 
 #######################################################
 #                        Main                         #
