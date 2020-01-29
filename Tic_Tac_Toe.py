@@ -195,7 +195,7 @@ class BlindAI:
                 
                 if player == 1:
                     if train_type == 1:
-                        x, y = takeTurnRandomAI(board)
+                        x, y = Random.chooseMove(board)
                     else:
                         x, y = self.chooseMove(board)
                     
@@ -274,7 +274,6 @@ class OneEyeAI:
             #total = total/9
             #print('X, Y' , x, ',', y, 'Total', total)
         print('MOVE: ', move)
-        #drawBoard(board)
         
     def resetCounts(self):
         self.win_count = 0
@@ -331,28 +330,21 @@ class OneEyeAI:
                 self.linksused.append(link)
 
     def updateWeightsDraw(self):
-        print("Draw : ", end = '')
         for link in self.linksused:
             link.weight = link.weight + ((1 - link.weight)*DRAW_INC)
         self.linksused = []
 
     def updateWeightsWin(self):
-        print("Win : ", end = '')
         for link in self.linksused:
             link.weight = link.weight + ((1 - link.weight)*random.uniform(0.01, 0.5))
-            #link.weight = 1
         self.linksused = []
 
     def updateWeightsLoss(self):
-        print("Loss: ", end = '')
         for link in self.linksused:
             link.weight = link.weight - ((link.weight)*random.uniform(0.01, 0.5))
-            #link.weight = 0
-            #print(link.source, ', ', link.destination, ', ', link.weight)
         self.linksused = []
 
-    def resetTileWeights(self): 
-        self.tileweights = [[[], [], []],[[], [], []],[[], [], []]]
+    def resetTileWeights(self): self.tileweights = [[[], [], []],[[], [], []],[[], [], []]]
 
     def chooseRounds(self):
         print('How many rounds of training')
@@ -387,6 +379,7 @@ class OneEyeAI:
         
         self.resetCounts()
         OneEye2.resetCounts()
+        win_hold = 0
 
         while (n >= 0):
             turn_count = 0
@@ -407,11 +400,9 @@ class OneEyeAI:
                 if player == 1:
                     (x,y) = -1, -1
                     if train_type == 1:
-                        (x, y) = takeTurnRandomAI(board)
-                        #print('Random', x, ', ', y)
+                        (x, y) = Random.chooseMove(board)
                     else:
                         (x, y) = self.chooseMove(board)
-                        #print('AI choice', x, ', ', y)
 
                     if (x == -1) or (y == -1):
                         print("Something went wrong, BLIND, PMOVES: ", possibleMoves(board),
@@ -462,11 +453,14 @@ class OneEyeAI:
                 #Check for draw
                 if turn_count > 8:
                     game = 0
-                    #self.updateWeightsDraw()
+                    self.updateWeightsDraw()
                     self.draw_count = self.draw_count + 1
                     break
 
-            print('Games Remaining : ', n)
+            if n%100 == 0: 
+                print('Games Remaining : ', n, 'Win Count: ', self.win_count, 'Win/100', self.win_count-win_hold)
+                win_hold = self.win_count
+
         print('Computer 1 : Wins:', self.win_count, ' Losses: ', self.loss_count, ' Draws : ', self.draw_count)
 
         #Print link weights for troubleshooting 
@@ -488,7 +482,7 @@ class OneEyeAI:
 def takeTurnAI(board, mode):
     x, y = -1, -1
     switcher = {
-        2: takeTurnRandomAI(board),
+        2: Random.chooseMove(board),
         3: takeTurnListAI(board),
         4: takeTurnLineAI(board),
         5: Blind1.chooseMove(board),
@@ -507,10 +501,14 @@ def takeTurnAI(board, mode):
     drawBoard(board)
     return board  
 
-def takeTurnRandomAI(board):
-    possible_moves = possibleMoves(board)
-    x, y = random.choice(possible_moves)
-    return x, y
+class RandomAI():
+    def __init__(self):
+        pass
+
+    def chooseMove(board):
+        possible_moves = possibleMoves(board)
+        x, y = random.choice(possible_moves)
+        return x, y
     
 def takeTurnListAI(board):
     move_list = [(1, 1), (0, 0), (2, 2), 
@@ -550,6 +548,8 @@ def takeTurnLineAI(board):
 #######################################################
 #                        Main                         #
 #######################################################
+
+Random = RandomAI()
 
 Blind1 = BlindAI('Blind1')
 Blind2 = BlindAI('Blind2')
