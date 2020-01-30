@@ -123,8 +123,7 @@ def checkWin(board):
 #######################################################
 
 class BlindAI:
-    def __init__(self, name):
-        self.AI_name = name
+    def __init__(self):
         self.moves_taken = []
         self.win_count = 0
         self.loss_count = 0
@@ -224,7 +223,7 @@ class OneEyeAI:
         for link in self.Net:
             x, y, mark = link.source
             if board[y][x] == mark:
-                self.tileweights[x][y].append(link.weight)
+                self.tileweights[x][y].append(link)
 
         #check possible moves for heighest weight
         w = 0
@@ -233,25 +232,23 @@ class OneEyeAI:
         for move in possible:
             (x, y) = move
             total = 0
-            for weight in self.tileweights[x][y]:
-                total += weight 
-            total = total/9
+            for link in self.tileweights[x][y]:
+                total += link.weight 
+            total = total/len(self.tileweights[x][y])
 
             if total > w:
                 w = total
-                choice = move
+                choice = self.tileweights[x][y][0].destination
         if choice == (-1, -1):
             print('Something has gone awry with the chooseMove function')
 
+        self.updateLinksUsed(self.tileweights[x][y])
         self.resetTileWeights()
         return choice
 
-    def updateLinksUsed(self, x, y, board):
-        for link in self.Net:
-            xs, ys, mark = link.source
-            xd, yd = link.destination
-            if (board[ys][xs] == mark) and (xd, yd) == (x, y):
-                self.linksused.append(link)
+    def updateLinksUsed(self, linklist):
+        for link in linklist:
+            self.linksused.append(link)
 
     def updateWeightsDraw(self):
         for link in self.linksused:
@@ -422,7 +419,6 @@ def trainTurn(player, opponent, mark, game, turn_count, board):
 
     else:          
         board = markBoard(x, y, mark, board)
-        if player.type == 2: player.updateLinksUsed(x, y, board)
 
     if checkWin(board):
         if player.type: 
@@ -520,8 +516,8 @@ Random = RandomAI()
 List = ListAI()
 Line = LineAI()
 
-Blind = BlindAI('Blind1')
-Blind2 = BlindAI('Blind2')
+Blind = BlindAI()
+Blind2 = BlindAI()
 
 OneEye = OneEyeAI()
 OneEye2 = OneEyeAI()
