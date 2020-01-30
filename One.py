@@ -23,3 +23,4 @@ def buildNet(input_list, output_list):
 
 def printNet(net):
     for link in net: print(link.source, link.weight, link.destination)
+

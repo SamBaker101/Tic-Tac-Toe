@@ -215,6 +215,15 @@ class OneEyeAI:
         Net = buildNet(in_list, out_list)
         return Net
 
+    def simpleFlatten(self):
+        mean = 0
+        for link in self.Net:
+            mean += link.weight
+        mean = mean/len(self.Net)
+
+        for link in self.Net:
+            link.weight = (link.weight + mean + 0.5)/3
+
     # This is all very inneficient, will need work
     def chooseMove(self, board):
         possible = possibleMoves(board)
@@ -350,10 +359,11 @@ def chooseRounds():
 
 def chooseTrainType():
     type = -1
-    while type < 0 or type > 3:
+    while type < 0 or type > 4:
         print('Choose Training Type:')
         print('1 : Linear')
         print('2 : Batch')
+        print('3 : Linear 2 - Increments repeated moves after a set number of games')
         type = int(input())
     return type
 
@@ -395,6 +405,26 @@ def trainPlot(data):
     plt.plot(games, wins)
     plt.show()
 
+def updateCounts(player1, player2, result):
+    if result == 0:
+        if player1.type: player1.draw_count += 1
+        if player2.type: player2.draw_count += 1
+    elif result == 1:
+        if player1.type: player1.win_count += 1
+        if player2.type: player2.loss_count += 1
+    elif result == 2:
+        if player2.type: player2.win_count += 1
+        if player1.type: player1.loss_count += 1
+
+def increment(player, result):
+    if player.type:
+        if result == 0:
+            player.updateWeightsDraw()
+        if result == 1:
+            player.updateWeightsWin()
+        if result == 2:
+            player.updateWeightsLoss()
+
 def trainStart():
 
     train_type = chooseTrainType()
@@ -402,10 +432,14 @@ def trainStart():
     player2 = choosePlayer2()
     n = chooseRounds()
 
+    if train_type == 1:
+        trainLinear(player1, player2, n)
     if train_type == 2:
-        trainBatch(player1, player2, n, train_type)
+        trainBatch(player1, player2, n)
+    if train_type == 3:
+        trainLinear2(player1, player2, n)
     else:
-        trainCycle(player1, player2, n, train_type)
+        print('Something is wrong: Train start')
 
 def trainTurn(player, opponent, mark, game, turn_count, board):
     (x,y) = (-1, -1)
@@ -421,74 +455,86 @@ def trainTurn(player, opponent, mark, game, turn_count, board):
         board = markBoard(x, y, mark, board)
 
     if checkWin(board):
-        if player.type: 
-            player.updateWeightsWin()
-            player.win_count += 1
-        if opponent.type:
-            opponent.updateWeightsLoss()
-            opponent.loss_count += 1
         game = 0
         return game
     return game
 
-def trainCycle(player1, player2, n, type):
+def trainCycle(player1, player2):
         
-        player1.resetCounts()
-        if player2.type: player2.resetCounts()
-        
-        win_hold = 0
-        game_count = 0
-        game_stats = []
+        turn_count = 0
+        board = setBoard()
+        game = 1
+        player = random.randint(1,2)
 
-        while (game_count < n):
-            turn_count = 0
-            game_count += 1
-            board = setBoard()
-            game = 1
-            player = random.randint(1,2)
-
-            if player1.type == 2: player1.linksused = []
-            if player2.type == 2: player2.linksused = []
+        if player1.type == 2: player1.linksused = []
+        if player2.type == 2: player2.linksused = []
             
-            while(game):
+        while(game):
                 
-                if player > 2:
-                    player = 1
+            if player > 2:
+                player = 1
                 
-                #Primary AI's turn
-                if player == 1:
-                    game = trainTurn(player1, player2, 1, game, turn_count, board)
-    
-                #Player 2's turn
-                if player == 2:
-                    game = trainTurn(player2, player1, 2, game, turn_count, board)
+            #Primary AI's turn
+            if player == 1:
+                result = trainTurn(player1, player2, 1, game, turn_count, board)
+                if result == 0: return 1
 
-                player += 1
-                turn_count += 1
+            #Player 2's turn
+            if player == 2:
+                result = trainTurn(player2, player1, 2, game, turn_count, board)
+                if result == 0: return 2
 
-                #Check for draw
-                if turn_count > 8:
-                    game = 0
-                    if player1.type:
-                        player1.updateWeightsDraw()
-                        player1.draw_count += 1
-                    if player2.type:
-                        player2.updateWeightsDraw()
-                        player2.draw_count += 1
-                    break
+            player += 1
+            turn_count += 1
 
-            if (n-game_count)%100 == 0 and type == 1: 
-                print('Games Remaining : ', n-game_count, 'Win Count: ', player1.win_count, 'Win in last 100:', player1.win_count-win_hold)
-                game_stats.append((game_count, player1.win_count-win_hold))
-                win_hold = player1.win_count
+            #Check for draw
+            if turn_count > 8:
+                game = 0
+                return 0
 
-        print('Computer 1 : Wins:', player1.win_count, ' Losses: ', player1.loss_count, ' Draws : ', player1.draw_count)
-        if type == 1: trainPlot(game_stats)
+def trainLinear(player1, player2, n):
 
-def trainBatch(player1, player2, n, type):
+    player1.resetCounts()
+    if player2.type: player2.resetCounts()
+        
+    win_hold = 0
+    game_count = 0
+    game_stats = []
+
+    while (game_count < n):
+        game_count += 1
+        result = trainCycle(player1, player2)
+        updateCounts(player1, player2, result)
+
+        increment(player1, result)
+        
+        if result == 0:
+            p2 = 0
+        elif result == 1:
+            p2 = 2
+        else: p2 = 1
+
+        increment(player2, p2)
+
+        if (n-game_count)%100 == 0: 
+            print('Games Remaining : ', n-game_count, 'Win Count: ', player1.win_count, 'Win in last 100:', player1.win_count-win_hold)
+            game_stats.append((game_count, player1.win_count-win_hold))
+            win_hold = player1.win_count
+
+            if player1.type == 2: player1.simpleFlatten()
+            if player2.type == 2: player2.simpleFlatten()
+
+    print('Computer 1 : Wins:', player1.win_count, ' Losses: ', player1.loss_count, ' Draws : ', player1.draw_count)
+    trainPlot(game_stats)
+
+def trainBatch(player1, player2, n):
 
     data = []
     batch_count=0
+    win_hold = 0
+
+    player1.resetCounts()
+    if player2.type: player2.resetCounts()
 
     if player1.type != 2 or player2.type != 2:
         print('Batch training is currently only implemented for OneEye')
@@ -498,15 +544,92 @@ def trainBatch(player1, player2, n, type):
         m = int(input())
         for round in range(m):
             batch_count += 1
-            trainCycle(player1, player2, n, type)
+
+            for game in range(n):
+                result = trainCycle(player1, player2)
+                updateCounts(player1, player2, result)
 
             if player1.win_count < player2.win_count:
                 for i in range(len(player1.Net)):
                     player1.Net[i].weight = (player1.Net[i].weight + player2.Net[i].weight)/2 
             player2.Net = player2.getNet()
-            
-            data.append((batch_count, player1.win_count))
+
+            print('Batch: ', batch_count, 'Total Wins: ', player1.win_count, 'Batch Wins: ', player1.win_count - win_hold)
+            data.append((batch_count, win_hold - player1.win_count))
+            win_hold = player1.win_count
         trainPlot(data)
+
+def trainLinear2(player1, player2, n):
+    player1.resetCounts()
+    if player2.type: player2.resetCounts()
+        
+    print('Increment every how many rounds?')
+    m = int(input())
+
+    win_links = []
+    loss_links = []
+    win_last = 0
+    loss_last = 0
+        
+
+    win_hold = 0
+    game_count = 0
+    game_stats = []
+
+    while (game_count < n):
+        game_count += 1
+        result = trainCycle(player1, player2)
+        updateCounts(player1, player2, result)
+
+        if result == 1:
+            for link in player1.linksused:
+                win_links.append(link)
+        elif result == 2:
+            for link in player1.linksused:
+                loss_links.append(link)
+
+        if (game_count%m) == 0:
+            if (player1.win_count - win_last) > (player1.loss_count - loss_last):
+                player1.linksused = []
+
+                for i in range(len(win_links)):
+                    for j in range(len(win_links)):
+                        if i != j and win_links[i] == win_links[j]:
+                            for k in range(len(player1.linksused)):
+                                if win_links[i] == player1.linksused[k]:
+                                    break
+                                else: player1.linksused.append(win_link[i])
+                increment(player1, 1)
+                player1.simpleFlatten()
+
+            elif (player1.win_count - win_last) < (player1.loss_count - loss_last):
+                player1.linksused = []
+
+                for i in range(len(loss_links)):
+                    for j in range(int((len(loss_links))/2)+1):
+                        if i != j and loss_links[i] == loss_links[j]:
+                            for k in range(len(player1.linksused)):
+                                if loss_links[i] == player1.linksused[k]:
+                                    break
+                                else: player1.linksused.append(win_link[i])
+                increment(player1, 2)
+                player1.simpleFlatten()
+            
+            win_last = player1.win_count
+            loss_last = player1.loss_count
+            win_links = []
+            loss_links = []
+
+            if player2.type == 2:
+                player2.Net = player2.getNet()
+
+        if (n-game_count)%100 == 0: 
+            print('Games Remaining : ', n-game_count, 'Win Count: ', player1.win_count, 'Win in last 100:', player1.win_count-win_hold)
+            game_stats.append((game_count, player1.win_count-win_hold))
+            win_hold = player1.win_count
+
+    print('Computer 1 : Wins:', player1.win_count, ' Losses: ', player1.loss_count, ' Draws : ', player1.draw_count)
+    trainPlot(game_stats)
 
 #######################################################
 #                        Main                         #
