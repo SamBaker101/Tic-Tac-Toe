@@ -359,11 +359,12 @@ def chooseRounds():
 
 def chooseTrainType():
     type = -1
-    while type < 0 or type > 4:
+    while type < 0 or type > 5:
         print('Choose Training Type:')
         print('1 : Linear')
         print('2 : Batch')
         print('3 : Linear 2 - Increments repeated moves after a set number of games')
+        print('4 : Linear 3 - Increments weights exclusive to wins or exclusive to losses')
         type = int(input())
     return type
 
@@ -394,6 +395,7 @@ def choosePlayer2():
         4: Line}
     player = switcher.get(n, "Invalid Mode Selection")
     return player
+
 
 def trainPlot(data):
     games = []
@@ -434,10 +436,12 @@ def trainStart():
 
     if train_type == 1:
         trainLinear(player1, player2, n)
-    if train_type == 2:
+    elif train_type == 2:
         trainBatch(player1, player2, n)
-    if train_type == 3:
+    elif train_type == 3:
         trainLinear2(player1, player2, n)
+    elif train_type == 4:
+        trainLinear3(player1, player2, n)
     else:
         print('Something is wrong: Train start')
 
@@ -589,32 +593,39 @@ def trainLinear2(player1, player2, n):
                 loss_links.append(link)
 
         if (game_count%m) == 0:
-            if (player1.win_count - win_last) > (player1.loss_count - loss_last):
-                player1.linksused = []
-
-                for i in range(len(win_links)):
-                    for j in range(len(win_links)):
-                        if i != j and win_links[i] == win_links[j]:
-                            for k in range(len(player1.linksused)):
-                                if win_links[i] == player1.linksused[k]:
-                                    break
-                                else: player1.linksused.append(win_link[i])
-                increment(player1, 1)
-                player1.simpleFlatten()
-
-            elif (player1.win_count - win_last) < (player1.loss_count - loss_last):
-                player1.linksused = []
-
-                for i in range(len(loss_links)):
-                    for j in range(int((len(loss_links))/2)+1):
-                        if i != j and loss_links[i] == loss_links[j]:
-                            for k in range(len(player1.linksused)):
-                                if loss_links[i] == player1.linksused[k]:
-                                    break
-                                else: player1.linksused.append(win_link[i])
-                increment(player1, 2)
-                player1.simpleFlatten()
             
+
+            player1.linksused = []
+
+            for i in range(len(win_links)):
+                for j in range(len(win_links)):
+                    if i != j and win_links[i] == win_links[j]:
+                        for k in range(len(player1.linksused)):
+                            if win_links[i] == player1.linksused[k]:
+                                break
+                            else: player1.linksused.append(win_link[i])
+
+            increment(player1, 1)
+            print('WIN LINKS :', end = '')
+            for link in player1.linksused:
+                print(link, end = ', ')
+
+            player1.linksused = []
+
+            for i in range(len(loss_links)):
+                for j in range(int((len(loss_links))/2)+1):
+                    if i != j and loss_links[i] == loss_links[j]:
+                        for k in range(len(player1.linksused)):
+                            if loss_links[i] == player1.linksused[k]:
+                                break
+                            else: player1.linksused.append(win_link[i])
+            increment(player1, 2)
+            player1.simpleFlatten()
+
+            print('LOSS LINKS :', end = '')
+            for link in player1.linksused:
+                print(link, end = ', ')
+
             win_last = player1.win_count
             loss_last = player1.loss_count
             win_links = []
@@ -630,6 +641,85 @@ def trainLinear2(player1, player2, n):
 
     print('Computer 1 : Wins:', player1.win_count, ' Losses: ', player1.loss_count, ' Draws : ', player1.draw_count)
     trainPlot(game_stats)
+
+def trainLinear3(player1, player2, n):
+    player1.resetCounts()
+    if player2.type: player2.resetCounts()
+        
+    print('Increment every how many rounds?')
+    m = int(input())
+
+    win_links = []
+    loss_links = []
+    win_last = 0
+    loss_last = 0
+        
+
+    win_hold = 0
+    game_count = 0
+    game_stats = []
+
+    while (game_count < n):
+        game_count += 1
+        result = trainCycle(player1, player2)
+        updateCounts(player1, player2, result)
+
+        if result == 1:
+            for link in player1.linksused:
+                win_links.append(link)
+        elif result == 2:
+            for link in player1.linksused:
+                loss_links.append(link)
+        if (game_count%m) == 0:
+
+            player1.linksused = []
+
+            for link in win_links:
+                temp = 0
+                for j in loss_links:
+                    if link.source == j.source:
+                        temp = 1
+                if temp == 0:
+                    player1.linksused.append(link)
+            
+            print('WIN LINKS :', end = '')
+            for link in player1.linksused:
+                print(link.source, ',', link.destination, ',', end = ' - ')
+            print('')
+            
+            increment(player1, 1)
+            player1.linksused = []
+
+            for link in loss_links:
+                temp = 0
+                for j in win_links:
+                    if link.source == j.source:
+                        temp = 1
+                if temp == 0:
+                    player1.linksused.append(link)
+
+            print('LOSS LINKS :', end = '')
+            for link in player1.linksused:
+                print(link.source, ',', link.destination, ',', end = ' - ')
+            print('')
+
+            increment(player1, 2)
+            player1.simpleFlatten()
+
+            win_last = player1.win_count
+            loss_last = player1.loss_count
+            win_links = []
+            loss_links = []
+
+            if player2.type == 2:
+                player2.Net = player2.getNet()
+
+        if (n-game_count)%100 == 0: 
+            print('Games Remaining : ', n-game_count, 'Win Count: ', player1.win_count, 'Win in last 100:', player1.win_count-win_hold)
+            game_stats.append((game_count, player1.win_count-win_hold))
+            win_hold = player1.win_count
+
+
 
 #######################################################
 #                        Main                         #
