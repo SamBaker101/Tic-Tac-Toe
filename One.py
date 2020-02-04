@@ -8,16 +8,17 @@ class Link:
         self.destination = destination
 
 
-def buildNet(input_list, output_list):
+def buildNet(input_list, output_list, w_range):
     net = []
+    m, n = w_range
     for input in input_list:
         (xi, yi, mark) = input
         if mark == 0:
-            net.append(Link(input, random.uniform(0.499,0.501), (xi, yi)))
+            net.append(Link(input, random.uniform(m, n), (xi, yi)))
         else:
             for output in output_list:
                 if (xi, yi) != output:
-                    net.append(Link(input, random.uniform(0.499,0.501), output))
+                    net.append(Link(input, random.uniform(m, n), output))
     
     return net
 

@@ -176,8 +176,8 @@ class BlindAI:
         self.moves_taken = []
 
 class OneEyeAI:
-    def __init__(self):
-        self.Net = self.getNet()
+    def __init__(self, w_range):
+        self.Net = self.getNet(w_range)
         self.tileweights = [[[], [], []],[[], [], []],[[], [], []]]
         self.linksused = []
         self.win_count = 0
@@ -203,7 +203,7 @@ class OneEyeAI:
         self.loss_count = 0
         self.draw_count = 0
 
-    def getNet(self):    
+    def getNet(self, w_range):    
         in_list = []
         out_list = []
         for i in range(3):
@@ -212,7 +212,7 @@ class OneEyeAI:
                 in_list.append((i, j, 1))
                 in_list.append((i, j, 2))
                 out_list.append((i,j))
-        Net = buildNet(in_list, out_list)
+        Net = buildNet(in_list, out_list, w_range)
         return Net
 
     def simpleFlatten(self):
@@ -552,7 +552,7 @@ def trainBatch(player1, player2, n):
             if player1.win_count < player2.win_count:
                 for i in range(len(player1.Net)):
                     player1.Net[i].weight = (player1.Net[i].weight + player2.Net[i].weight)/2 
-            player2.Net = player2.getNet()
+            player2.Net = player2.getNet((0, 1))
 
             print('Batch: ', batch_count, 'Total Wins: ', player1.win_count, 'Batch Wins: ', player1.win_count - win_hold)
             data.append((batch_count, win_hold - player1.win_count))
@@ -642,8 +642,8 @@ Line = LineAI()
 Blind = BlindAI()
 Blind2 = BlindAI()
 
-OneEye = OneEyeAI()
-OneEye2 = OneEyeAI()
+OneEye = OneEyeAI((0.499, 0.501))
+OneEye2 = OneEyeAI((0, 1))
 
 def main():
 
